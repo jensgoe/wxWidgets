@@ -51,6 +51,7 @@
 #include "wx/selstore.h"
 #include "wx/stopwatch.h"
 #include "wx/weakref.h"
+#include "wx/hashmap.h"
 #include "wx/generic/private/markuptext.h"
 #include "wx/generic/private/widthcalc.h"
 #if wxUSE_ACCESSIBILITY
@@ -868,6 +869,10 @@ private:
 
     void DrawCellBackground( wxDataViewRenderer* cell, wxDC& dc, const wxRect& rect );
 
+    void HeightCachePut(unsigned int row, int height) const;
+    int HeightCacheGet(unsigned int row, int &height) const;
+    void HeightCacheRemove(unsigned int row) const;
+
 private:
     wxDataViewCtrl             *m_owner;
     int                         m_lineHeight;
@@ -883,6 +888,7 @@ private:
     bool                        m_hasFocus;
     bool                        m_useCellFocus;
     bool                        m_currentColSetByKeyboard;
+    wxHashTable                 *m_heightCache;
 
 #if wxUSE_DRAG_AND_DROP
     int                         m_dragCount;
@@ -1724,6 +1730,7 @@ wxDataViewMainWindow::wxDataViewMainWindow( wxDataViewCtrl *parent, wxWindowID i
     m_useCellFocus = false;
     m_currentRow = (unsigned)-1;
     m_lineHeight = GetDefaultRowHeight();
+    m_heightCache = new wxHashTable();
 
 #if wxUSE_DRAG_AND_DROP
     m_dragCount = 0;
@@ -2521,6 +2528,7 @@ bool wxDataViewMainWindow::ItemAdded(const wxDataViewItem & parent, const wxData
     }
     else
     {
+        m_heightCache->Clear();
         SortPrepare();
 
         wxDataViewTreeNode *parentNode = FindNode(parent);
@@ -2612,6 +2620,8 @@ bool wxDataViewMainWindow::ItemDeleted(const wxDataViewItem& parent,
         // about this item, just return without doing anything then.
         if ( !parentNode )
             return true;
+
+        m_heightCache->Clear();
 
         wxCHECK_MSG( parentNode->HasChildren(), false, "parent node doesn't have children?" );
         const wxDataViewTreeNodes& parentsChildren = parentNode->GetChildNodes();
@@ -2707,6 +2717,8 @@ bool wxDataViewMainWindow::ItemDeleted(const wxDataViewItem& parent,
 
 bool wxDataViewMainWindow::ItemChanged(const wxDataViewItem & item)
 {
+    HeightCacheRemove(GetRowByItem(item));
+
     SortPrepare();
     GetModel()->Resort();
 
@@ -3081,6 +3093,12 @@ int wxDataViewMainWindow::GetLineStart( unsigned int row ) const
         unsigned int r;
         for (r = 0; r < row; r++)
         {
+            int cachedHeight = 0;
+            if (HeightCacheGet(r, cachedHeight) == 1) {
+                start += cachedHeight;
+                continue;
+            }
+
             const wxDataViewTreeNode* node = GetTreeNodeByRow(r);
             if (!node) return start;
 
@@ -3108,6 +3126,8 @@ int wxDataViewMainWindow::GetLineStart( unsigned int row ) const
             }
 
             start += height;
+
+            HeightCachePut(r, height);
         }
 
         return start;
@@ -3131,6 +3151,16 @@ int wxDataViewMainWindow::GetLineAt( unsigned int y ) const
     unsigned int yy = 0;
     for (;;)
     {
+        int cachedHeight;
+        if (HeightCacheGet(row, cachedHeight) == 1) {
+            yy += cachedHeight;
+            if (y < yy)
+                return row;
+
+            row++;
+            continue;
+        }
+
         const wxDataViewTreeNode* node = GetTreeNodeByRow(row);
         if (!node)
         {
@@ -3161,6 +3191,8 @@ int wxDataViewMainWindow::GetLineAt( unsigned int y ) const
             height = wxMax( height, renderer->GetSize().y );
         }
 
+        HeightCachePut(row, height);
+
         yy += height;
         if (y < yy)
             return row;
@@ -3180,6 +3212,11 @@ int wxDataViewMainWindow::GetLineHeight( unsigned int row ) const
         const wxDataViewTreeNode* node = GetTreeNodeByRow(row);
         // wxASSERT( node );
         if (!node) return m_lineHeight;
+
+        int cachedHeight;
+        if (HeightCacheGet(row, cachedHeight) == 1) {
+            return cachedHeight;
+        }
 
         wxDataViewItem item = node->GetItem();
 
@@ -3205,12 +3242,36 @@ int wxDataViewMainWindow::GetLineHeight( unsigned int row ) const
             height = wxMax( height, renderer->GetSize().y );
         }
 
+        HeightCachePut(row, height);
+
         return height;
     }
     else
     {
         return m_lineHeight;
     }
+}
+
+
+void wxDataViewMainWindow::HeightCachePut(unsigned int row, int height) const
+{
+    wxInt32 *cachedHeight = new wxInt32(height);
+    m_heightCache->Put(row, (wxObject*)cachedHeight);
+}
+
+int wxDataViewMainWindow::HeightCacheGet(unsigned int row, int &height) const
+{
+    wxInt32 *cachedHeight = (wxInt32*)m_heightCache->Get(row);
+    if (cachedHeight != NULL) {
+        height = *cachedHeight;
+        return 1;
+    }
+    return 0;
+}
+
+void wxDataViewMainWindow::HeightCacheRemove(unsigned int row) const
+{
+    m_heightCache->Delete(row);
 }
 
 
@@ -3353,6 +3414,7 @@ void wxDataViewMainWindow::Expand( unsigned int row )
     if (!node->HasChildren())
         return;
 
+    m_heightCache->Clear();
     if (!node->IsOpen())
     {
         if ( !SendExpanderEvent(wxEVT_DATAVIEW_ITEM_EXPANDING, node->GetItem()) )
@@ -3402,6 +3464,8 @@ void wxDataViewMainWindow::Collapse(unsigned int row)
 
     if (!node->HasChildren())
         return;
+
+    m_heightCache->Clear();
 
     if (node->IsOpen())
     {
