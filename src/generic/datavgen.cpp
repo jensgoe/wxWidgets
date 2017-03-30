@@ -52,6 +52,7 @@
 #include "wx/stopwatch.h"
 #include "wx/weakref.h"
 #include "wx/hashmap.h"
+#include "wx/dynarray.h"
 #include "wx/generic/private/markuptext.h"
 #include "wx/generic/private/widthcalc.h"
 #if wxUSE_ACCESSIBILITY
@@ -632,6 +633,101 @@ private:
 
 WX_DEFINE_SORTED_ARRAY_SIZE_T(unsigned int, wxDataViewSelection);
 
+
+struct RangeEntity {
+    unsigned int from;
+    unsigned int to;
+};
+
+WX_DECLARE_OBJARRAY(RangeEntity, ArrayOfRangeEntities);
+#include "wx/arrimpl.cpp"
+WX_DEFINE_OBJARRAY(ArrayOfRangeEntities)
+
+class RowRange
+{
+public:
+    void Add(const unsigned int idx);
+    void RemoveFrom(const unsigned int idx);
+    bool Has(const unsigned int idx);
+    unsigned int Count();
+    unsigned int CountTo(const unsigned int idx);
+    unsigned int GetSize(); // for debugging statistics
+
+private:
+    ArrayOfRangeEntities m_ranges;
+    void CleanUp(int rngIdx);
+};
+
+WX_DECLARE_HASH_MAP(unsigned int, RowRange*, wxIntegerHash, wxIntegerEqual,
+    HeightToRowRangeMap);
+
+/**
+    @class HeightCache
+
+    HeightCache implements a cache mechanism for the DataViewCtrl to give
+    fast access to:
+     * the height of one line (GetLineHeight)
+     * the y-coordinate where a row starts (GetLineStart)
+     * and vice versa (GetLineAt)
+
+    The layout of the cache is a hashmap where the keys are all exisiting
+    row heights in pixels. The values are RowRange objects that represents
+    all having the specified height.
+
+    {
+      22: RowRange([0..10], [15..17], [20..2000]),
+      42: RowRange([11..12], [18..18]),
+      62: RowRange([13..14], [19..19])
+    }
+
+    Examples
+    ========
+
+    GetLineStart
+    ------------
+    To retrieve the y-coordinate of item 1000 it is neccessary to look into
+    each key of the hashmap *m_heightToRowRange*. Get the row count of
+    indices lower than 1000 (RowRange::CountTo) and multiplies it wich the
+    according height.
+
+    RowRange([0..10], [15..17], [20..2000]).CountTo(1000)
+    --> 0..10 are 11 items, 15..17 are 3 items and 20..1000 are 980 items (1000-20)
+        = 11 + 3 + 980 = 994 items
+
+    GetLineStart(1000) --> (22 * 994) + (42 * 3) + (62 * 3) = 22180
+
+    GetLineHeight
+    -------------
+    To retrieve the line height look into each key and check if row is
+    contained in RowRange (RowRange::Has)
+
+    GetLineAt
+    ---------
+    To retrieve the row that starts at a specific y-coordinate.
+    Look into each key and count all rows.
+    Use bisect algorithm in combination with GetLineStart() to
+    find the appropriate item
+*/
+class HeightCache
+{
+public:
+    bool GetLineStart(unsigned int row, int &start);
+    bool GetLineHeight(unsigned int row, int &height);
+    bool GetLineAt(int y, unsigned int &row);
+
+    void Put(const unsigned int row, const int height);
+    void Remove(const unsigned int row);
+    void Clear();
+    void LogSize(); // for debugging statistics
+
+private:
+    bool GetLineInfo(unsigned int row, int &start, int &height);
+    mutable HeightToRowRangeMap  m_heightToRowRange;
+    bool m_showLogInfo; // true if changed since last logging
+
+};
+
+
 class wxDataViewMainWindow: public wxWindow
 {
 public:
@@ -869,10 +965,6 @@ private:
 
     void DrawCellBackground( wxDataViewRenderer* cell, wxDC& dc, const wxRect& rect );
 
-    void HeightCachePut(unsigned int row, int height) const;
-    int HeightCacheGet(unsigned int row, int &height) const;
-    void HeightCacheRemove(unsigned int row) const;
-
 private:
     wxDataViewCtrl             *m_owner;
     int                         m_lineHeight;
@@ -888,7 +980,7 @@ private:
     bool                        m_hasFocus;
     bool                        m_useCellFocus;
     bool                        m_currentColSetByKeyboard;
-    wxHashTable                 *m_heightCache;
+    HeightCache                *m_rowHeightCache;
 
 #if wxUSE_DRAG_AND_DROP
     int                         m_dragCount;
@@ -1730,7 +1822,7 @@ wxDataViewMainWindow::wxDataViewMainWindow( wxDataViewCtrl *parent, wxWindowID i
     m_useCellFocus = false;
     m_currentRow = (unsigned)-1;
     m_lineHeight = GetDefaultRowHeight();
-    m_heightCache = new wxHashTable();
+    m_rowHeightCache = new HeightCache();
 
 #if wxUSE_DRAG_AND_DROP
     m_dragCount = 0;
@@ -1774,6 +1866,8 @@ wxDataViewMainWindow::~wxDataViewMainWindow()
 {
     DestroyTree();
     delete m_renameTimer;
+    m_rowHeightCache->Clear();
+    delete m_rowHeightCache;
 }
 
 
@@ -1996,6 +2090,8 @@ void wxDataViewMainWindow::OnPaint( wxPaintEvent &WXUNUSED(event) )
         // No items to draw.
         return;
     }
+
+//    m_rowHeightCache->LogSize();
 
     // prepare the DC
     GetOwner()->PrepareDC( dc );
@@ -2528,7 +2624,7 @@ bool wxDataViewMainWindow::ItemAdded(const wxDataViewItem & parent, const wxData
     }
     else
     {
-        m_heightCache->Clear();
+        m_rowHeightCache->Clear();
         SortPrepare();
 
         wxDataViewTreeNode *parentNode = FindNode(parent);
@@ -2621,8 +2717,6 @@ bool wxDataViewMainWindow::ItemDeleted(const wxDataViewItem& parent,
         if ( !parentNode )
             return true;
 
-        m_heightCache->Clear();
-
         wxCHECK_MSG( parentNode->HasChildren(), false, "parent node doesn't have children?" );
         const wxDataViewTreeNodes& parentsChildren = parentNode->GetChildNodes();
 
@@ -2654,6 +2748,8 @@ bool wxDataViewMainWindow::ItemDeleted(const wxDataViewItem& parent,
 
             return true;
         }
+
+        m_rowHeightCache->Remove(GetRowByItem(parent) + itemPosInNode);
 
         // Delete the item from wxDataViewTreeNode representation:
         const int itemsDeleted = 1 + itemNode->GetSubTreeCount();
@@ -2717,7 +2813,7 @@ bool wxDataViewMainWindow::ItemDeleted(const wxDataViewItem& parent,
 
 bool wxDataViewMainWindow::ItemChanged(const wxDataViewItem & item)
 {
-    HeightCacheRemove(GetRowByItem(item));
+    m_rowHeightCache->Remove(GetRowByItem(item));
 
     SortPrepare();
     GetModel()->Resort();
@@ -3089,24 +3185,28 @@ int wxDataViewMainWindow::GetLineStart( unsigned int row ) const
         // TODO make more efficient
 
         int start = 0;
+        if (m_rowHeightCache->GetLineStart(row, start)) {
+            return start;
+        }
 
         unsigned int r;
         for (r = 0; r < row; r++)
         {
-            int cachedHeight = 0;
-            if (HeightCacheGet(r, cachedHeight) == 1) {
-                start += cachedHeight;
-                continue;
-            }
-
             const wxDataViewTreeNode* node = GetTreeNodeByRow(r);
             if (!node) return start;
+
+            int height = 0;
+            if (m_rowHeightCache->GetLineHeight(r, height))
+            {
+                start += height;
+                continue;
+            }
 
             wxDataViewItem item = node->GetItem();
 
             unsigned int cols = GetOwner()->GetColumnCount();
             unsigned int col;
-            int height = m_lineHeight;
+            height = m_lineHeight;
             for (col = 0; col < cols; col++)
             {
                 const wxDataViewColumn *column = GetOwner()->GetColumn(col);
@@ -3127,7 +3227,7 @@ int wxDataViewMainWindow::GetLineStart( unsigned int row ) const
 
             start += height;
 
-            HeightCachePut(r, height);
+            m_rowHeightCache->Put(r, height);
         }
 
         return start;
@@ -3149,18 +3249,13 @@ int wxDataViewMainWindow::GetLineAt( unsigned int y ) const
     // TODO make more efficient
     unsigned int row = 0;
     unsigned int yy = 0;
+
+    if (m_rowHeightCache->GetLineAt(y, row)) {
+        return row;
+    }
+
     for (;;)
     {
-        int cachedHeight;
-        if (HeightCacheGet(row, cachedHeight) == 1) {
-            yy += cachedHeight;
-            if (y < yy)
-                return row;
-
-            row++;
-            continue;
-        }
-
         const wxDataViewTreeNode* node = GetTreeNodeByRow(row);
         if (!node)
         {
@@ -3168,30 +3263,34 @@ int wxDataViewMainWindow::GetLineAt( unsigned int y ) const
             return row + ((y-yy) / m_lineHeight);
         }
 
-        wxDataViewItem item = node->GetItem();
-
-        unsigned int cols = GetOwner()->GetColumnCount();
-        unsigned int col;
-        int height = m_lineHeight;
-        for (col = 0; col < cols; col++)
+        int height = 0;
+        if (!m_rowHeightCache->GetLineHeight(row, height))
         {
-            const wxDataViewColumn *column = GetOwner()->GetColumn(col);
-            if (column->IsHidden())
-                continue;      // skip it!
+            wxDataViewItem item = node->GetItem();
 
-            if ((col != 0) &&
-                model->IsContainer(item) &&
-                !model->HasContainerColumns(item))
-                continue;      // skip it!
+            unsigned int cols = GetOwner()->GetColumnCount();
+            unsigned int col;
+            height = m_lineHeight;
+            for (col = 0; col < cols; col++)
+            {
+                const wxDataViewColumn *column = GetOwner()->GetColumn(col);
+                if (column->IsHidden())
+                    continue;      // skip it!
 
-            wxDataViewRenderer *renderer =
-                const_cast<wxDataViewRenderer*>(column->GetRenderer());
-            renderer->PrepareForItem(model, item, column->GetModelColumn());
+                if ((col != 0) &&
+                    model->IsContainer(item) &&
+                    !model->HasContainerColumns(item))
+                    continue;      // skip it!
 
-            height = wxMax( height, renderer->GetSize().y );
+                wxDataViewRenderer *renderer =
+                    const_cast<wxDataViewRenderer*>(column->GetRenderer());
+                renderer->PrepareForItem(model, item, column->GetModelColumn());
+
+                height = wxMax( height, renderer->GetSize().y );
+            }
+
+            m_rowHeightCache->Put(row, height);
         }
-
-        HeightCachePut(row, height);
 
         yy += height;
         if (y < yy)
@@ -3213,15 +3312,14 @@ int wxDataViewMainWindow::GetLineHeight( unsigned int row ) const
         // wxASSERT( node );
         if (!node) return m_lineHeight;
 
-        int cachedHeight;
-        if (HeightCacheGet(row, cachedHeight) == 1) {
-            return cachedHeight;
+        int height = 0;
+        if (m_rowHeightCache->GetLineHeight(row, height)) {
+            return height;
         }
 
         wxDataViewItem item = node->GetItem();
 
-        int height = m_lineHeight;
-
+        height = m_lineHeight;
         unsigned int cols = GetOwner()->GetColumnCount();
         unsigned int col;
         for (col = 0; col < cols; col++)
@@ -3242,7 +3340,7 @@ int wxDataViewMainWindow::GetLineHeight( unsigned int row ) const
             height = wxMax( height, renderer->GetSize().y );
         }
 
-        HeightCachePut(row, height);
+        m_rowHeightCache->Put(row, height);
 
         return height;
     }
@@ -3253,25 +3351,283 @@ int wxDataViewMainWindow::GetLineHeight( unsigned int row ) const
 }
 
 
-void wxDataViewMainWindow::HeightCachePut(unsigned int row, int height) const
+void RowRange::Add(const unsigned int idx)
 {
-    wxInt32 *cachedHeight = new wxInt32(height);
-    m_heightCache->Put(row, (wxObject*)cachedHeight);
-}
+    RangeEntity *rng = NULL;
 
-int wxDataViewMainWindow::HeightCacheGet(unsigned int row, int &height) const
-{
-    wxInt32 *cachedHeight = (wxInt32*)m_heightCache->Get(row);
-    if (cachedHeight != NULL) {
-        height = *cachedHeight;
-        return 1;
+    size_t count = m_ranges.GetCount();
+    size_t rngIdx = 0;
+    while (rngIdx < count)
+    {
+        rng = &m_ranges[rngIdx];
+
+        if (idx >= rng->from && rng->to >= idx)
+        {
+            // index already in range
+            return;
+        }
+
+        if (rng->from == idx + 1)
+        {
+            rng->from = idx;
+            CleanUp(rngIdx);
+            return;
+        }
+        if (rng->to == idx - 1)
+        {
+            rng->to = idx;
+            CleanUp(rngIdx);
+            return;
+        }
+
+        if (rng->from > idx + 1)
+            break;
+
+        rngIdx += 1;
     }
-    return 0;
+//    wxLogMessage("New Range: %d" , count);
+
+    RangeEntity newRange;
+    newRange.from = idx;
+    newRange.to = idx;
+    m_ranges.Insert(newRange, rngIdx);
 }
 
-void wxDataViewMainWindow::HeightCacheRemove(unsigned int row) const
+void RowRange::RemoveFrom(const unsigned int idx)
 {
-    m_heightCache->Delete(row);
+    RangeEntity *rng = NULL;
+
+    size_t count = m_ranges.GetCount();
+    size_t rngIdx = 0;
+    while (rngIdx < count)
+    {
+        rng = &m_ranges[rngIdx];
+        if (rng->from >= idx)
+        {
+            m_ranges.RemoveAt(rngIdx);
+            count = m_ranges.GetCount();
+            continue;
+        }
+        if (rng->to >= idx)
+        {
+            rng->to = idx - 1;
+        }
+
+        rngIdx += 1;
+    }
+}
+
+
+void RowRange::CleanUp(int idx)
+{
+    RangeEntity *rng = NULL;
+    RangeEntity *prevRng = NULL;
+
+    size_t count = m_ranges.GetCount();
+    size_t rngIdx = 0;
+    if (idx > 0) rngIdx = idx - 1;
+    while (rngIdx <= idx + 1 && rngIdx < count)
+    {
+        rng = &m_ranges[rngIdx];
+
+        if (prevRng != NULL && prevRng->to >= rng->to)
+        {
+            m_ranges.RemoveAt(rngIdx);
+            count = m_ranges.GetCount();
+            continue;
+        }
+
+        prevRng = rng;
+        rngIdx += 1;
+    }
+
+}
+
+bool RowRange::Has(const unsigned int idx)
+{
+    RangeEntity rng;
+    size_t count = m_ranges.GetCount();
+    for (size_t rngIdx = 0; rngIdx < count; rngIdx++)
+    {
+        rng = m_ranges[rngIdx];
+        if (rng.from <= idx && idx <= rng.to) {
+            return true;
+        }
+    }
+    return false;
+}
+
+unsigned int RowRange::Count()
+{
+    unsigned int ctr = 0;
+    RangeEntity rng;
+    size_t count = m_ranges.GetCount();
+    for (size_t rngIdx = 0; rngIdx < count; rngIdx++)
+    {
+        rng = m_ranges[rngIdx];
+        ctr += (rng.to + 1) - rng.from;
+    }
+    return ctr;
+}
+
+unsigned int RowRange::CountTo(const unsigned int idx)
+{
+    unsigned int ctr = 0;
+    RangeEntity rng;
+    size_t count = m_ranges.GetCount();
+    for (size_t rngIdx = 0; rngIdx < count; rngIdx++)
+    {
+        rng = m_ranges[rngIdx];
+        if (rng.from > idx) {
+            break;
+        }
+        else if (rng.to < idx) {
+            ctr += rng.to - rng.from;
+			ctr += 1;
+        }
+        else {
+            ctr += idx - rng.from;
+			break;
+        }
+    }
+    return ctr;
+}
+
+unsigned int RowRange::GetSize() // for debugging statistics
+{
+    return m_ranges.size();
+}
+
+bool HeightCache::GetLineInfo(unsigned int row, int &start, int &height)
+{
+	int y = 0;
+	bool found = false;
+	HeightToRowRangeMap::iterator it;
+	for (it = m_heightToRowRange.begin(); it != m_heightToRowRange.end(); ++it)
+	{
+		int rowHeight = it->first;
+		RowRange* rowRange = it->second;
+		if (rowRange->Has(row)) {
+			height = rowHeight;
+			found = true;
+		}
+		y += rowHeight * (rowRange->CountTo(row));
+	}
+	if (found) {
+		start = y;
+	}
+	return found;
+}
+
+bool HeightCache::GetLineStart(unsigned int row, int &start)
+{
+	int height = 0;
+	return GetLineInfo(row, start, height);
+}
+
+bool HeightCache::GetLineHeight(unsigned int row, int &height)
+{
+    HeightToRowRangeMap::iterator it;
+    for (it = m_heightToRowRange.begin(); it != m_heightToRowRange.end(); ++it)
+    {
+        int rowHeight = it->first;
+        RowRange* rowRange = it->second;
+        if (rowRange->Has(row)) {
+            height = rowHeight;
+//			wxLogMessage("GetLineHeight %d: %d", row, height);
+			return true;
+        }
+    }
+    return false;
+}
+
+bool HeightCache::GetLineAt(int y, unsigned int &row)
+{
+    unsigned int total = 0;
+    HeightToRowRangeMap::iterator it;
+    for (it = m_heightToRowRange.begin(); it != m_heightToRowRange.end(); ++it)
+    {
+        RowRange* rowRange = it->second;
+        total += rowRange->Count();
+    }
+
+    if (total == 0)
+        return false;
+
+    int lo = 0;
+    int hi = total;
+    while (lo < hi) {
+        int mid = (lo + hi) / 2;
+        int start, height;
+        if (GetLineInfo(mid, start, height))
+        {
+            if (start + height <= y)
+            {
+                lo = mid + 1;
+            }
+            else {
+                hi = mid;
+            }
+		}
+        else {
+            return false;
+        }
+    }
+    row = lo;
+//    wxLogMessage("GetLineAt %d: %d", y, row);
+    return true;
+}
+
+void HeightCache::Put(const unsigned int row, const int height)
+{
+    RowRange *rowRange = m_heightToRowRange[height];
+    if (rowRange == NULL) {
+        rowRange = new RowRange();
+        m_heightToRowRange[height] = rowRange;
+    }
+    rowRange->Add(row);
+    m_showLogInfo = true;
+}
+
+void HeightCache::Remove(const unsigned int row)
+{
+//  wxLogMessage("Remove %d", row);
+	HeightToRowRangeMap::iterator it;
+    for (it = m_heightToRowRange.begin(); it != m_heightToRowRange.end(); ++it)
+    {
+        RowRange* rowRange = it->second;
+        rowRange->RemoveFrom(row);
+    }
+}
+
+void HeightCache::Clear()
+{
+//    wxLogMessage("clearing height cache");
+    HeightToRowRangeMap::iterator it;
+    for (it = m_heightToRowRange.begin(); it != m_heightToRowRange.end(); ++it)
+    {
+        RowRange* rowRange = it->second;
+        delete rowRange;
+    }
+    m_heightToRowRange.clear();
+    m_showLogInfo = true;
+}
+
+void HeightCache::LogSize() // for debugging statistics
+{
+    if (!m_showLogInfo) return;
+
+    int rangeEntityCount = 0;
+    HeightToRowRangeMap::iterator it;
+    for (it = m_heightToRowRange.begin(); it != m_heightToRowRange.end(); ++it)
+    {
+        RowRange* rowRange = it->second;
+        rangeEntityCount += rowRange->GetSize();
+    }
+    int heights = m_heightToRowRange.size();
+
+    wxLogMessage("Cache size: HeightMap=%d; RowRanges=%d --> %d", heights, rangeEntityCount, sizeof(RangeEntity) * rangeEntityCount);
+    m_showLogInfo = false;
 }
 
 
@@ -3414,7 +3770,7 @@ void wxDataViewMainWindow::Expand( unsigned int row )
     if (!node->HasChildren())
         return;
 
-    m_heightCache->Clear();
+    m_rowHeightCache->Remove(row);
     if (!node->IsOpen())
     {
         if ( !SendExpanderEvent(wxEVT_DATAVIEW_ITEM_EXPANDING, node->GetItem()) )
@@ -3465,7 +3821,7 @@ void wxDataViewMainWindow::Collapse(unsigned int row)
     if (!node->HasChildren())
         return;
 
-    m_heightCache->Clear();
+    m_rowHeightCache->Remove(row);
 
     if (node->IsOpen())
     {
