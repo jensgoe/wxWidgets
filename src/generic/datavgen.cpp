@@ -634,7 +634,8 @@ private:
 WX_DEFINE_SORTED_ARRAY_SIZE_T(unsigned int, wxDataViewSelection);
 
 
-struct RangeEntity {
+struct RangeEntity
+{
     unsigned int from;
     unsigned int to;
 };
@@ -724,7 +725,6 @@ private:
     bool GetLineInfo(unsigned int row, int &start, int &height);
     mutable HeightToRowRangeMap  m_heightToRowRange;
     bool m_showLogInfo; // true if changed since last logging
-
 };
 
 
@@ -2467,9 +2467,10 @@ void wxDataViewMainWindow::OnPaint( wxPaintEvent &WXUNUSED(event) )
             item_rect.x += indent;
             item_rect.width -= indent;
 
-            if ( item_rect.width <= 0 ) {
-	            cell_rect.y += cell_height;
-	            continue;
+            if ( item_rect.width <= 0 )
+            {
+                cell_rect.y += cell_height;
+                continue;
             }
 
             // TODO: it would be much more efficient to create a clipping
@@ -2624,13 +2625,14 @@ bool wxDataViewMainWindow::ItemAdded(const wxDataViewItem & parent, const wxData
     }
     else
     {
-        m_rowHeightCache->Clear();
         SortPrepare();
 
         wxDataViewTreeNode *parentNode = FindNode(parent);
 
         if ( !parentNode )
             return false;
+
+        m_rowHeightCache->Clear();
 
         wxDataViewItemArray modelSiblings;
         GetModel()->GetChildren(parent, modelSiblings);
@@ -3185,7 +3187,8 @@ int wxDataViewMainWindow::GetLineStart( unsigned int row ) const
         // TODO make more efficient
 
         int start = 0;
-        if (m_rowHeightCache->GetLineStart(row, start)) {
+        if (m_rowHeightCache->GetLineStart(row, start))
+        {
             return start;
         }
 
@@ -3250,7 +3253,8 @@ int wxDataViewMainWindow::GetLineAt( unsigned int y ) const
     unsigned int row = 0;
     unsigned int yy = 0;
 
-    if (m_rowHeightCache->GetLineAt(y, row)) {
+    if (m_rowHeightCache->GetLineAt(y, row))
+    {
         return row;
     }
 
@@ -3313,7 +3317,8 @@ int wxDataViewMainWindow::GetLineHeight( unsigned int row ) const
         if (!node) return m_lineHeight;
 
         int height = 0;
-        if (m_rowHeightCache->GetLineHeight(row, height)) {
+        if (m_rowHeightCache->GetLineHeight(row, height))
+        {
             return height;
         }
 
@@ -3381,7 +3386,9 @@ void RowRange::Add(const unsigned int idx)
         }
 
         if (rng->from > idx + 1)
+        {
             break;
+        }
 
         rngIdx += 1;
     }
@@ -3425,7 +3432,10 @@ void RowRange::CleanUp(int idx)
 
     size_t count = m_ranges.GetCount();
     size_t rngIdx = 0;
-    if (idx > 0) rngIdx = idx - 1;
+    if (idx > 0)
+    {
+        rngIdx = idx - 1;
+    }
     while (rngIdx <= idx + 1 && rngIdx < count)
     {
         rng = &m_ranges[rngIdx];
@@ -3450,7 +3460,8 @@ bool RowRange::Has(const unsigned int idx)
     for (size_t rngIdx = 0; rngIdx < count; rngIdx++)
     {
         rng = m_ranges[rngIdx];
-        if (rng.from <= idx && idx <= rng.to) {
+        if (rng.from <= idx && idx <= rng.to)
+        {
             return true;
         }
     }
@@ -3478,16 +3489,19 @@ unsigned int RowRange::CountTo(const unsigned int idx)
     for (size_t rngIdx = 0; rngIdx < count; rngIdx++)
     {
         rng = m_ranges[rngIdx];
-        if (rng.from > idx) {
+        if (rng.from > idx)
+        {
             break;
         }
-        else if (rng.to < idx) {
+        else if (rng.to < idx)
+        {
             ctr += rng.to - rng.from;
-			ctr += 1;
+            ctr += 1;
         }
-        else {
+        else
+        {
             ctr += idx - rng.from;
-			break;
+            break;
         }
     }
     return ctr;
@@ -3500,29 +3514,31 @@ unsigned int RowRange::GetSize() // for debugging statistics
 
 bool HeightCache::GetLineInfo(unsigned int row, int &start, int &height)
 {
-	int y = 0;
-	bool found = false;
-	HeightToRowRangeMap::iterator it;
-	for (it = m_heightToRowRange.begin(); it != m_heightToRowRange.end(); ++it)
-	{
-		int rowHeight = it->first;
-		RowRange* rowRange = it->second;
-		if (rowRange->Has(row)) {
-			height = rowHeight;
-			found = true;
-		}
-		y += rowHeight * (rowRange->CountTo(row));
-	}
-	if (found) {
-		start = y;
-	}
-	return found;
+    int y = 0;
+    bool found = false;
+    HeightToRowRangeMap::iterator it;
+    for (it = m_heightToRowRange.begin(); it != m_heightToRowRange.end(); ++it)
+    {
+        int rowHeight = it->first;
+        RowRange* rowRange = it->second;
+        if (rowRange->Has(row))
+        {
+            height = rowHeight;
+            found = true;
+        }
+        y += rowHeight * (rowRange->CountTo(row));
+    }
+    if (found)
+    {
+        start = y;
+    }
+    return found;
 }
 
 bool HeightCache::GetLineStart(unsigned int row, int &start)
 {
-	int height = 0;
-	return GetLineInfo(row, start, height);
+    int height = 0;
+    return GetLineInfo(row, start, height);
 }
 
 bool HeightCache::GetLineHeight(unsigned int row, int &height)
@@ -3532,10 +3548,10 @@ bool HeightCache::GetLineHeight(unsigned int row, int &height)
     {
         int rowHeight = it->first;
         RowRange* rowRange = it->second;
-        if (rowRange->Has(row)) {
+        if (rowRange->Has(row))
+        {
             height = rowHeight;
-//			wxLogMessage("GetLineHeight %d: %d", row, height);
-			return true;
+            return true;
         }
     }
     return false;
@@ -3552,11 +3568,14 @@ bool HeightCache::GetLineAt(int y, unsigned int &row)
     }
 
     if (total == 0)
+    {
         return false;
+    }
 
     int lo = 0;
     int hi = total;
-    while (lo < hi) {
+    while (lo < hi)
+    {
         int mid = (lo + hi) / 2;
         int start, height;
         if (GetLineInfo(mid, start, height))
@@ -3565,23 +3584,25 @@ bool HeightCache::GetLineAt(int y, unsigned int &row)
             {
                 lo = mid + 1;
             }
-            else {
+            else
+            {
                 hi = mid;
             }
-		}
-        else {
+        }
+        else
+        {
             return false;
         }
     }
     row = lo;
-//    wxLogMessage("GetLineAt %d: %d", y, row);
     return true;
 }
 
 void HeightCache::Put(const unsigned int row, const int height)
 {
     RowRange *rowRange = m_heightToRowRange[height];
-    if (rowRange == NULL) {
+    if (rowRange == NULL)
+    {
         rowRange = new RowRange();
         m_heightToRowRange[height] = rowRange;
     }
@@ -3591,8 +3612,7 @@ void HeightCache::Put(const unsigned int row, const int height)
 
 void HeightCache::Remove(const unsigned int row)
 {
-//  wxLogMessage("Remove %d", row);
-	HeightToRowRangeMap::iterator it;
+    HeightToRowRangeMap::iterator it;
     for (it = m_heightToRowRange.begin(); it != m_heightToRowRange.end(); ++it)
     {
         RowRange* rowRange = it->second;
@@ -3602,7 +3622,6 @@ void HeightCache::Remove(const unsigned int row)
 
 void HeightCache::Clear()
 {
-//    wxLogMessage("clearing height cache");
     HeightToRowRangeMap::iterator it;
     for (it = m_heightToRowRange.begin(); it != m_heightToRowRange.end(); ++it)
     {
@@ -3615,7 +3634,10 @@ void HeightCache::Clear()
 
 void HeightCache::LogSize() // for debugging statistics
 {
-    if (!m_showLogInfo) return;
+    if (!m_showLogInfo)
+    {
+        return;
+    }
 
     int rangeEntityCount = 0;
     HeightToRowRangeMap::iterator it;
