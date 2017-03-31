@@ -723,7 +723,7 @@ public:
 
 private:
     bool GetLineInfo(unsigned int row, int &start, int &height);
-    mutable HeightToRowRangeMap  m_heightToRowRange;
+    HeightToRowRangeMap  m_heightToRowRange;
     bool m_showLogInfo; // true if changed since last logging
 };
 
