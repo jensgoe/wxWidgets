@@ -875,6 +875,7 @@ private:
 
     wxDataViewColumn           *m_currentCol;
     unsigned int                m_currentRow;
+    unsigned int                m_selectionStart;
     wxSelectionStore            m_selection;
 
     wxDataViewRenameTimer      *m_renameTimer;
@@ -1723,6 +1724,7 @@ wxDataViewMainWindow::wxDataViewMainWindow( wxDataViewCtrl *parent, wxWindowID i
     m_currentColSetByKeyboard = false;
     m_useCellFocus = false;
     m_currentRow = (unsigned)-1;
+    m_selectionStart = (unsigned)-1;
     m_lineHeight = GetDefaultRowHeight();
 
 #if wxUSE_DRAG_AND_DROP
@@ -2947,7 +2949,10 @@ bool wxDataViewMainWindow::UnselectAllRows(unsigned int except)
 void wxDataViewMainWindow::SelectRow( unsigned int row, bool on )
 {
     if ( m_selection.SelectItem(row, on) )
+    {
+        m_selectionStart = row;
         RefreshRow(row);
+    }
 }
 
 void wxDataViewMainWindow::SelectRows( unsigned int from, unsigned int to )
@@ -3879,7 +3884,14 @@ void wxDataViewMainWindow::OnChar( wxKeyEvent &event )
         case WXK_SPACE:
             if ( event.HasModifiers() )
             {
-                event.Skip();
+                if (event.ControlDown())
+                {
+                    SelectRow(m_currentRow, !IsRowSelected(m_currentRow));
+                }
+                else
+                {
+                    event.Skip();
+                }
                 break;
             }
             else
@@ -4016,14 +4028,18 @@ void wxDataViewMainWindow::OnVerticalNavigation(const wxKeyEvent& event, int del
 
         ChangeCurrentRow( newCurrent );
 
-        // select all the items between the old and the new one
-        if ( oldCurrent > newCurrent )
-        {
-            newCurrent = oldCurrent;
-            oldCurrent = m_currentRow;
-        }
+        if (m_selectionStart == static_cast<unsigned>(-1))
+            m_selectionStart = newCurrent;
 
-        SelectRows(oldCurrent, newCurrent);
+        unsigned int lineFrom = m_selectionStart,
+            lineTo = newCurrent;
+        if (lineTo < lineFrom)
+        {
+            lineTo = lineFrom;
+            lineFrom = newCurrent;
+        }
+        UnselectAllRows();
+        SelectRows(lineFrom, lineTo);
 
         wxSelectionStore::IterationState cookie;
         const unsigned firstSel = m_selection.GetFirstSelectedItem(cookie);
@@ -4518,6 +4534,7 @@ void wxDataViewMainWindow::OnMouse( wxMouseEvent &event )
         bool cmdModifierDown = event.CmdDown();
         if ( IsSingleSel() || !(cmdModifierDown || event.ShiftDown()) )
         {
+            m_selectionStart = current;
             if ( IsSingleSel() || !IsRowSelected(current) )
             {
                 ChangeCurrentRow(current);
@@ -4537,6 +4554,7 @@ void wxDataViewMainWindow::OnMouse( wxMouseEvent &event )
         {
             if (cmdModifierDown)
             {
+                m_selectionStart = current;
                 ChangeCurrentRow(current);
                 ReverseRowSelection(m_currentRow);
                 SendSelectionChangedEvent(GetItemByRow(m_currentRow));
@@ -4545,22 +4563,18 @@ void wxDataViewMainWindow::OnMouse( wxMouseEvent &event )
             {
                 ChangeCurrentRow(current);
 
-                unsigned int lineFrom = oldCurrentRow,
-                    lineTo = current;
+                if (m_selectionStart == static_cast<unsigned>(-1))
+                    m_selectionStart = current;
 
-                if ( lineFrom == static_cast<unsigned>(-1) )
+                unsigned int lineFrom = m_selectionStart,
+                    lineTo = current;
+                if (lineTo < lineFrom)
                 {
-                    // If we hadn't had any current row before, treat this as a
-                    // simple click and select the new row only.
+                    lineTo = lineFrom;
                     lineFrom = current;
                 }
 
-                if ( lineTo < lineFrom )
-                {
-                    lineTo = lineFrom;
-                    lineFrom = m_currentRow;
-                }
-
+                UnselectAllRows();
                 SelectRows(lineFrom, lineTo);
 
                 wxSelectionStore::IterationState cookie;
