@@ -2133,7 +2133,11 @@ void wxDataViewMainWindow::OnPaint( wxPaintEvent &WXUNUSED(event) )
 
             bool renderColumnFocus = false;
 
-            int flags = wxCONTROL_SELECTED;
+            int flags = 0;
+            if ( selected )
+                flags |= wxCONTROL_SELECTED;
+            if ( item == m_currentRow )
+                flags |= wxCONTROL_CURRENT;
             if ( m_hasFocus )
                 flags |= wxCONTROL_FOCUSED;
 
@@ -2205,7 +2209,7 @@ void wxDataViewMainWindow::OnPaint( wxPaintEvent &WXUNUSED(event) )
                                 this,
                                 dc,
                                 colRect,
-                                flags | wxCONTROL_CURRENT | wxCONTROL_CELL
+                                flags | wxCONTROL_CELL
                                 );
 
                             break;
@@ -2217,14 +2221,14 @@ void wxDataViewMainWindow::OnPaint( wxPaintEvent &WXUNUSED(event) )
             }
 
             // draw selection and whole-item focus:
-            if ( selected && !renderColumnFocus )
+            if ( !renderColumnFocus )
             {
                 wxRendererNative::Get().DrawItemSelectionRect
                     (
                     this,
                     dc,
                     rowRect,
-                    flags | wxCONTROL_CURRENT
+                    flags
                     );
             }
         }
