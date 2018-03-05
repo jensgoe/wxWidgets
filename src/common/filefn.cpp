@@ -866,7 +866,7 @@ void wxMacFilename2FSSpec( const wxString& path , FSSpec *spec )
     FSRef fsRef;
     wxMacPathToFSRef( path , &fsRef );
     err = FSGetCatalogInfo(&fsRef, kFSCatInfoNone, NULL, NULL, spec, NULL);
-    verify_noerr( err );
+    __Verify_noErr(err);
 }
 #endif
 
@@ -1192,7 +1192,7 @@ bool wxRmdir(const wxString& dir, int WXUNUSED(flags))
 #if defined(__VMS__)
     return false; //to be changed since rmdir exists in VMS7.x
 #else
-    if ( wxRmDir(dir.fn_str()) != 0 )
+    if ( wxRmDir(dir) != 0 )
     {
         wxLogSysError(_("Directory '%s' couldn't be deleted"), dir);
         return false;
@@ -1607,7 +1607,7 @@ static bool wxCheckWin32Permission(const wxString& path, DWORD access)
         return false;
     }
 
-    HANDLE h = ::CreateFile
+    const HANDLE h = ::CreateFile
                  (
                     path.t_str(),
                     access,

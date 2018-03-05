@@ -373,9 +373,14 @@ private:
 // ============================================================================
 
 @interface wxTextFieldCell : NSTextFieldCell
+{
+@private
+    int alignment_;
+    BOOL adjustRect_;
+}
+
     -(void) setWXAlignment:(int)alignment;
 @end
-
 
 // ============================================================================
 // wxImageTextCell
@@ -475,8 +480,10 @@ public:
     virtual void EnsureVisible(const wxDataViewItem& item,
                                wxDataViewColumn const* columnPtr);
     virtual unsigned int GetCount() const;
+    virtual int GetCountPerPage() const;
     virtual wxRect GetRectangle(const wxDataViewItem& item,
                                 wxDataViewColumn const* columnPtr);
+    virtual wxDataViewItem GetTopItem() const;
     virtual bool IsExpanded(const wxDataViewItem& item) const;
     virtual bool Reload();
     virtual bool Remove(const wxDataViewItem& parent,
@@ -544,8 +551,6 @@ private:
     wxCocoaOutlineDataSource* m_DataSource;
 
     wxCocoaOutlineView* m_OutlineView;
-
-    bool m_removeIndentIfNecessary;
 };
 
 #endif // _WX_DATAVIEWCTRL_COCOOA_H_

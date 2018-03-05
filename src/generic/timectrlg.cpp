@@ -446,6 +446,7 @@ private:
 
             case Field_Max:
                 wxFAIL_MSG( "Invalid field" );
+                return;
         }
 
         UpdateText();
@@ -491,7 +492,7 @@ private:
             // Check if the new value is acceptable. If not, we just handle
             // this digit as if it were the first one.
             int newValue = currentValue*10 + n;
-            if ( newValue < maxValue )
+            if ( newValue <= maxValue )
             {
                 n = newValue;
 
@@ -531,6 +532,7 @@ private:
             case Field_AMPM:
             case Field_Max:
                 wxFAIL_MSG( "Invalid field" );
+                return;
         }
 
         if ( moveToNextField && m_currentField < Field_Sec )

@@ -991,9 +991,9 @@ void wxOwnerDrawnComboBox::DoClear()
 
     GetVListBoxComboPopup()->Clear();
 
-    // NB: This really needs to be SetValue() instead of ChangeValue(),
-    //     as wxTextEntry API expects an event to be sent.
-    SetValue(wxEmptyString);
+    // There is no text entry when using wxCB_READONLY style, so test for it.
+    if ( GetTextCtrl() )
+        wxTextEntry::Clear();
 }
 
 void wxOwnerDrawnComboBox::Clear()

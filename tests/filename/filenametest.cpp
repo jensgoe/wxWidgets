@@ -1020,10 +1020,10 @@ void CreateShortcut(const wxString& pathFile, const wxString& pathLink)
    hr = sl->QueryInterface(IID_IPersistFile, (void **)&pf);
    CPPUNIT_ASSERT( SUCCEEDED(hr) );
 
-   hr = sl->SetPath(pathFile.wx_str());
+   hr = sl->SetPath(pathFile.t_str());
    CPPUNIT_ASSERT( SUCCEEDED(hr) );
 
-   hr = pf->Save(pathLink.wx_str(), TRUE);
+   hr = pf->Save(pathLink.wc_str(), TRUE);
    CPPUNIT_ASSERT( SUCCEEDED(hr) );
 }
 
@@ -1049,3 +1049,18 @@ void FileNameTestCase::TestShortcuts()
 }
 
 #endif // __WINDOWS__
+
+#ifdef __LINUX__
+
+// Check that GetSize() works correctly for special files.
+TEST_CASE("wxFileName::GetSizeSpecial", "[filename][linux][special-file]")
+{
+    wxULongLong size = wxFileName::GetSize("/proc/kcore");
+    INFO( "size of /proc/kcore=" << size );
+    CHECK( size > 0 );
+
+    // All files in /sys seem to have size of 4KiB currently.
+    CHECK( wxFileName::GetSize("/sys/power/state") == 4096 );
+}
+
+#endif // __LINUX__

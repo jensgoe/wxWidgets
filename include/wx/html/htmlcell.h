@@ -232,7 +232,7 @@ public:
     virtual wxHtmlCell* GetFirstChild() const { return NULL; }
 
     // members writing methods
-    virtual void SetPos(int x, int y) {m_PosX = x, m_PosY = y;}
+    virtual void SetPos(int x, int y) {m_PosX = x; m_PosY = y;}
     void SetLink(const wxHtmlLinkInfo& link);
     void SetNext(wxHtmlCell *cell) {m_Next = cell;}
 
@@ -486,7 +486,7 @@ public:
     // returns background colour (of wxNullColour if none set), so that widgets can
     // adapt to it:
     wxColour GetBackgroundColour();
-    void SetBorder(const wxColour& clr1, const wxColour& clr2, int border = 1) {m_Border = border; m_BorderColour1 = clr1, m_BorderColour2 = clr2;}
+    void SetBorder(const wxColour& clr1, const wxColour& clr2, int border = 1) {m_Border = border; m_BorderColour1 = clr1; m_BorderColour2 = clr2;}
     virtual wxHtmlLinkInfo* GetLink(int x = 0, int y = 0) const wxOVERRIDE;
     virtual const wxHtmlCell* Find(int condition, const void* param) const wxOVERRIDE;
 
@@ -648,16 +648,12 @@ protected:
 class WXDLLIMPEXP_HTML wxHtmlLinkInfo : public wxObject
 {
 public:
-    wxHtmlLinkInfo() : wxObject()
-          { m_Href = m_Target = wxEmptyString; m_Event = NULL, m_Cell = NULL; }
-    wxHtmlLinkInfo(const wxString& href, const wxString& target = wxEmptyString) : wxObject()
-          { m_Href = href; m_Target = target; m_Event = NULL, m_Cell = NULL; }
-    wxHtmlLinkInfo(const wxHtmlLinkInfo& l) : wxObject()
-          { m_Href = l.m_Href, m_Target = l.m_Target, m_Event = l.m_Event;
-            m_Cell = l.m_Cell; }
-    wxHtmlLinkInfo& operator=(const wxHtmlLinkInfo& l)
-          { m_Href = l.m_Href, m_Target = l.m_Target, m_Event = l.m_Event;
-            m_Cell = l.m_Cell; return *this; }
+    wxHtmlLinkInfo()
+        { m_Event = NULL; m_Cell = NULL; }
+    wxHtmlLinkInfo(const wxString& href, const wxString& target = wxString())
+        : m_Href(href)
+        , m_Target(target)
+        { m_Event = NULL; m_Cell = NULL; }
 
     void SetEvent(const wxMouseEvent *e) { m_Event = e; }
     void SetHtmlCell(const wxHtmlCell *e) { m_Cell = e; }

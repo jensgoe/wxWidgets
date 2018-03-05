@@ -2476,6 +2476,7 @@ class WXDLLIMPEXP_FWD_CORE wxScrollBar;
     #define wxSTC_DEPRECATED_MACRO_VALUE(value,msg) value
 #endif
 
+#if WXWIN_COMPATIBILITY_3_0
 
 // The wxSTC_INDIC{0,1,2,S}_MASK values are no longer used in Scintilla
 
@@ -2525,6 +2526,7 @@ class WXDLLIMPEXP_FWD_CORE wxScrollBar;
 #define wxSTC_SCVS_NOWRAPLINESTART wxSTC_DEPRECATED_MACRO_VALUE(4, \
     "wxSTC_SCVS_NOWRAPLINESTART is deprecated. Use wxSTC_VS_NOWRAPLINESTART instead.")
 
+#endif // WXWIN_COMPATIBILITY_3_0
 
 //----------------------------------------------------------------------
 // Commands that can be bound to keystrokes section {{{
@@ -3961,6 +3963,12 @@ public:
     // to overlap from one line to the next.
     void SetPhasesDraw(int phases);
 
+    // Choose the quality level for text.
+    void SetFontQuality(int fontQuality);
+
+    // Retrieve the quality level for text.
+    int GetFontQuality() const;
+
     // Scroll so that a display line is at the top of the display.
     void SetFirstVisibleLine(int displayLine);
 
@@ -5128,11 +5136,11 @@ public:
     wxIntPtr SendMsg(int msg, wxUIntPtr wp=0, wxIntPtr lp=0) const;
 
 
-    // Set the vertical scrollbar to use instead of the ont that's built-in.
+    // Set the vertical scrollbar to use instead of the one that's built-in.
     void SetVScrollBar(wxScrollBar* bar);
 
 
-    // Set the horizontal scrollbar to use instead of the ont that's built-in.
+    // Set the horizontal scrollbar to use instead of the one that's built-in.
     void SetHScrollBar(wxScrollBar* bar);
 
     // Can be used to prevent the EVT_CHAR handler from adding the char
@@ -5397,13 +5405,13 @@ public:
 
     // methods deprecated due to changes in the scintilla library
     // ---------------------------------------------
-
+#if WXWIN_COMPATIBILITY_3_0
     wxDEPRECATED_MSG("use UsePopUp(int) instead.")
     void UsePopUp(bool allowPopUp);
 
     wxDEPRECATED_MSG("use StartStyling(int start) instead.")
     void StartStyling(int start, int unused);
-
+#endif // WXWIN_COMPATIBILITY_3_0
 
     static wxVersionInfo GetLibraryVersionInfo();
 
@@ -5425,7 +5433,6 @@ protected:
     void OnMouseRightDown(wxMouseEvent& evt);
     void OnMouseMove(wxMouseEvent& evt);
     void OnMouseLeftUp(wxMouseEvent& evt);
-    void OnMouseRightUp(wxMouseEvent& evt);
     void OnMouseMiddleUp(wxMouseEvent& evt);
     void OnContextMenu(wxContextMenuEvent& evt);
     void OnMouseWheel(wxMouseEvent& evt);
@@ -5438,6 +5445,7 @@ protected:
     void OnMenu(wxCommandEvent& evt);
     void OnListBox(wxCommandEvent& evt);
     void OnIdle(wxIdleEvent& evt);
+    void OnMouseCaptureLost(wxMouseCaptureLostEvent& evt);
 
     virtual wxSize DoGetBestSize() const wxOVERRIDE;
 
@@ -5596,8 +5604,10 @@ wxDECLARE_EXPORTED_EVENT( WXDLLIMPEXP_STC, wxEVT_STC_CHARADDED, wxStyledTextEven
 wxDECLARE_EXPORTED_EVENT( WXDLLIMPEXP_STC, wxEVT_STC_SAVEPOINTREACHED, wxStyledTextEvent );
 wxDECLARE_EXPORTED_EVENT( WXDLLIMPEXP_STC, wxEVT_STC_SAVEPOINTLEFT, wxStyledTextEvent );
 wxDECLARE_EXPORTED_EVENT( WXDLLIMPEXP_STC, wxEVT_STC_ROMODIFYATTEMPT, wxStyledTextEvent );
+#if WXWIN_COMPATIBILITY_3_0
 wxDEPRECATED_MSG( "Don't handle wxEVT_STC_KEY. It's never generated." ) \
     wxDECLARE_EXPORTED_EVENT( WXDLLIMPEXP_STC, wxEVT_STC_KEY, wxStyledTextEvent );
+#endif // WXWIN_COMPATIBILITY_3_0
 wxDECLARE_EXPORTED_EVENT( WXDLLIMPEXP_STC, wxEVT_STC_DOUBLECLICK, wxStyledTextEvent );
 wxDECLARE_EXPORTED_EVENT( WXDLLIMPEXP_STC, wxEVT_STC_UPDATEUI, wxStyledTextEvent );
 wxDECLARE_EXPORTED_EVENT( WXDLLIMPEXP_STC, wxEVT_STC_MODIFIED, wxStyledTextEvent );
@@ -5606,8 +5616,10 @@ wxDECLARE_EXPORTED_EVENT( WXDLLIMPEXP_STC, wxEVT_STC_MARGINCLICK, wxStyledTextEv
 wxDECLARE_EXPORTED_EVENT( WXDLLIMPEXP_STC, wxEVT_STC_NEEDSHOWN, wxStyledTextEvent );
 wxDECLARE_EXPORTED_EVENT( WXDLLIMPEXP_STC, wxEVT_STC_PAINTED, wxStyledTextEvent );
 wxDECLARE_EXPORTED_EVENT( WXDLLIMPEXP_STC, wxEVT_STC_USERLISTSELECTION, wxStyledTextEvent );
+#if WXWIN_COMPATIBILITY_3_0
 wxDEPRECATED_MSG( "Don't handle wxEVT_STC_URIDROPPED. It's never generated." ) \
     wxDECLARE_EXPORTED_EVENT( WXDLLIMPEXP_STC, wxEVT_STC_URIDROPPED, wxStyledTextEvent );
+#endif // WXWIN_COMPATIBILITY_3_0
 wxDECLARE_EXPORTED_EVENT( WXDLLIMPEXP_STC, wxEVT_STC_DWELLSTART, wxStyledTextEvent );
 wxDECLARE_EXPORTED_EVENT( WXDLLIMPEXP_STC, wxEVT_STC_DWELLEND, wxStyledTextEvent );
 wxDECLARE_EXPORTED_EVENT( WXDLLIMPEXP_STC, wxEVT_STC_START_DRAG, wxStyledTextEvent );
@@ -5636,7 +5648,9 @@ wxDECLARE_EXPORTED_EVENT( WXDLLIMPEXP_STC, wxEVT_STC_MARGIN_RIGHT_CLICK, wxStyle
         wxEVT_STC_SAVEPOINTREACHED,
         wxEVT_STC_SAVEPOINTLEFT,
         wxEVT_STC_ROMODIFYATTEMPT,
+#if WXWIN_COMPATIBILITY_3_0
         wxEVT_STC_KEY, // deprecated
+#endif // WXWIN_COMPATIBILITY_3_0
         wxEVT_STC_DOUBLECLICK,
         wxEVT_STC_UPDATEUI,
         wxEVT_STC_MODIFIED,
@@ -5645,7 +5659,9 @@ wxDECLARE_EXPORTED_EVENT( WXDLLIMPEXP_STC, wxEVT_STC_MARGIN_RIGHT_CLICK, wxStyle
         wxEVT_STC_NEEDSHOWN,
         wxEVT_STC_PAINTED,
         wxEVT_STC_USERLISTSELECTION,
+#if WXWIN_COMPATIBILITY_3_0
         wxEVT_STC_URIDROPPED, // deprecated
+#endif // WXWIN_COMPATIBILITY_3_0
         wxEVT_STC_DWELLSTART,
         wxEVT_STC_DWELLEND,
         wxEVT_STC_START_DRAG,

@@ -52,9 +52,7 @@
     #include "wx/file.h"
 #endif
 
-#ifdef __WXGTK__
-    #include "wx/dcbuffer.h"
-#endif
+#include "wx/dcbuffer.h"
 
 #include "ScintillaWX.h"
 
@@ -151,11 +149,7 @@ wxBEGIN_EVENT_TABLE(wxStyledTextCtrl, wxControl)
     EVT_LEFT_DCLICK             (wxStyledTextCtrl::OnMouseLeftDown)
     EVT_MOTION                  (wxStyledTextCtrl::OnMouseMove)
     EVT_LEFT_UP                 (wxStyledTextCtrl::OnMouseLeftUp)
-#if defined(__WXGTK__) || defined(__WXMAC__)
-    EVT_RIGHT_UP                (wxStyledTextCtrl::OnMouseRightUp)
-#else
     EVT_CONTEXT_MENU            (wxStyledTextCtrl::OnContextMenu)
-#endif
     EVT_MOUSEWHEEL              (wxStyledTextCtrl::OnMouseWheel)
     EVT_MIDDLE_UP               (wxStyledTextCtrl::OnMouseMiddleUp)
     EVT_CHAR                    (wxStyledTextCtrl::OnChar)
@@ -166,6 +160,7 @@ wxBEGIN_EVENT_TABLE(wxStyledTextCtrl, wxControl)
     EVT_ERASE_BACKGROUND        (wxStyledTextCtrl::OnEraseBackground)
     EVT_MENU_RANGE              (10, 16, wxStyledTextCtrl::OnMenu)
     EVT_LISTBOX_DCLICK          (wxID_ANY, wxStyledTextCtrl::OnListBox)
+    EVT_MOUSE_CAPTURE_LOST      (wxStyledTextCtrl::OnMouseCaptureLost)
 wxEND_EVENT_TABLE()
 
 
@@ -229,6 +224,18 @@ bool wxStyledTextCtrl::Create(wxWindow *parent,
     // STC doesn't support RTL languages at all
     SetLayoutDirection(wxLayout_LeftToRight);
 
+    // Rely on native double buffering by default, except under Mac where it
+    // doesn't work for some reason, see #18085.
+#if wxALWAYS_NATIVE_DOUBLE_BUFFER && !defined(__WXMAC__)
+    SetBufferedDraw(false);
+#else
+    SetBufferedDraw(true);
+#endif
+
+#if wxUSE_GRAPHICS_DIRECT2D
+    SetFontQuality(wxSTC_EFF_QUALITY_DEFAULT);
+#endif
+
     return true;
 }
 
@@ -247,7 +254,7 @@ wxIntPtr wxStyledTextCtrl::SendMsg(int msg, wxUIntPtr wp, wxIntPtr lp) const
 
 //----------------------------------------------------------------------
 
-// Set the vertical scrollbar to use instead of the ont that's built-in.
+// Set the vertical scrollbar to use instead of the one that's built-in.
 void wxStyledTextCtrl::SetVScrollBar(wxScrollBar* bar)  {
     m_vScrollBar = bar;
     if (bar != NULL) {
@@ -257,7 +264,7 @@ void wxStyledTextCtrl::SetVScrollBar(wxScrollBar* bar)  {
 }
 
 
-// Set the horizontal scrollbar to use instead of the ont that's built-in.
+// Set the horizontal scrollbar to use instead of the one that's built-in.
 void wxStyledTextCtrl::SetHScrollBar(wxScrollBar* bar)  {
     m_hScrollBar = bar;
     if (bar != NULL) {
@@ -2529,6 +2536,18 @@ int wxStyledTextCtrl::GetPhasesDraw() const
 void wxStyledTextCtrl::SetPhasesDraw(int phases)
 {
     SendMsg(SCI_SETPHASESDRAW, phases, 0);
+}
+
+// Choose the quality level for text.
+void wxStyledTextCtrl::SetFontQuality(int fontQuality)
+{
+    SendMsg(SCI_SETFONTQUALITY, fontQuality, 0);
+}
+
+// Retrieve the quality level for text.
+int wxStyledTextCtrl::GetFontQuality() const
+{
+    return SendMsg(SCI_GETFONTQUALITY, 0, 0);
 }
 
 // Scroll so that a display line is at the top of the display.
@@ -5147,6 +5166,7 @@ void wxStyledTextCtrl::AppendTextRaw(const char* text, int length)
     SendMsg(SCI_APPENDTEXT, length, (sptr_t)text);
 }
 
+#if WXWIN_COMPATIBILITY_3_0
 // Deprecated since Scintilla 3.7.2
 void wxStyledTextCtrl::UsePopUp(bool allowPopUp)
 {
@@ -5160,16 +5180,13 @@ void wxStyledTextCtrl::StartStyling(int start, int unused)
 
         SendMsg(SCI_STARTSTYLING, start, unused);
 }
+#endif // WXWIN_COMPATIBILITY_3_0
 
 //----------------------------------------------------------------------
 // Event handlers
 
 void wxStyledTextCtrl::OnPaint(wxPaintEvent& WXUNUSED(evt)) {
-#ifdef __WXGTK__
-    wxBufferedPaintDC dc(this);
-#else
     wxPaintDC dc(this);
-#endif
     m_swx->DoPaint(&dc, GetUpdateRegion().GetBox());
 }
 
@@ -5209,8 +5226,7 @@ void wxStyledTextCtrl::OnMouseRightDown(wxMouseEvent& evt) {
     wxPoint pt = evt.GetPosition();
     m_swx->DoRightButtonDown(Point(pt.x, pt.y), m_stopWatch.Time(),
                       evt.ShiftDown(), evt.ControlDown(), evt.AltDown());
-    // we need to call evt.Skip() to ensure the context menu event
-    // is generated with wxGTK and wxOSX
+    // We need to call evt.Skip() to allow generating EVT_CONTEXT_MENU
     evt.Skip();
 }
 
@@ -5224,13 +5240,6 @@ void wxStyledTextCtrl::OnMouseLeftUp(wxMouseEvent& evt) {
     m_swx->DoLeftButtonUp(Point(pt.x, pt.y), m_stopWatch.Time(),
                       evt.ControlDown());
 }
-
-
-void wxStyledTextCtrl::OnMouseRightUp(wxMouseEvent& evt) {
-    wxPoint pt = evt.GetPosition();
-    m_swx->DoContextMenu(Point(pt.x, pt.y));
-}
-
 
 void wxStyledTextCtrl::OnMouseMiddleUp(wxMouseEvent& evt) {
     wxPoint pt = evt.GetPosition();
@@ -5376,6 +5385,11 @@ void wxStyledTextCtrl::OnListBox(wxCommandEvent& WXUNUSED(evt)) {
 
 void wxStyledTextCtrl::OnIdle(wxIdleEvent& evt) {
     m_swx->DoOnIdle(evt);
+}
+
+
+void wxStyledTextCtrl::OnMouseCaptureLost(wxMouseCaptureLostEvent& WXUNUSED(evt)) {
+    m_swx->DoMouseCaptureLost();
 }
 
 

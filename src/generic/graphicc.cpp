@@ -88,6 +88,7 @@ using namespace std;
 #ifndef __WXGTK3__
 #include "wx/gtk/dc.h"
 #endif
+#include "wx/gtk/private/object.h"
 #endif
 
 #ifdef __WXQT__
@@ -98,7 +99,6 @@ using namespace std;
 #ifdef __WXMAC__
 #include "wx/osx/private.h"
 #include <cairo-quartz.h>
-#include <cairo-atsui.h>
 #endif
 
 // Helper functions for dealing with alpha pre-multiplication.
@@ -285,13 +285,13 @@ private:
 class WXDLLIMPEXP_CORE wxCairoPenData : public wxCairoPenBrushBaseData
 {
 public:
-    wxCairoPenData( wxGraphicsRenderer* renderer, const wxPen &pen );
+    wxCairoPenData( wxGraphicsRenderer* renderer, const wxGraphicsPenInfo &info );
     ~wxCairoPenData();
 
     void Init();
 
     virtual void Apply( wxGraphicsContext* context ) wxOVERRIDE;
-    virtual wxDouble GetWidth() { return m_width; }
+    wxDouble GetWidth() { return m_width; }
 
 private :
     double m_width;
@@ -320,7 +320,7 @@ public:
                                    const wxGraphicsGradientStops& stops);
 
 protected:
-    virtual void Init();
+    void Init();
 
     // common part of Create{Linear,Radial}GradientBrush()
     void AddGradientStops(const wxGraphicsGradientStops& stops);
@@ -337,7 +337,7 @@ public:
                     const wxColour& col);
     ~wxCairoFontData();
 
-    virtual bool Apply( wxGraphicsContext* context );
+    void Apply( wxGraphicsContext* context );
 #ifdef __WXGTK__
     const wxFont& GetFont() const { return m_wxfont; }
 #endif
@@ -383,10 +383,10 @@ public:
     wxCairoBitmapData( wxGraphicsRenderer* renderer, cairo_surface_t* bitmap );
     ~wxCairoBitmapData();
 
-    virtual cairo_surface_t* GetCairoSurface() { return m_surface; }
-    virtual cairo_pattern_t* GetCairoPattern() { return m_pattern; }
-    virtual void* GetNativeBitmap() const wxOVERRIDE { return m_surface; }
-    virtual wxSize GetSize() { return wxSize(m_width, m_height); }
+    cairo_surface_t* GetCairoSurface() { return m_surface; }
+    cairo_pattern_t* GetCairoPattern() { return m_pattern; }
+    void* GetNativeBitmap() const wxOVERRIDE { return m_surface; }
+    wxSize GetSize() { return wxSize(m_width, m_height); }
 
 #if wxUSE_IMAGE
     wxImage ConvertToImage() const;
@@ -476,7 +476,9 @@ public:
 
     virtual void StrokePath( const wxGraphicsPath& p ) wxOVERRIDE;
     virtual void FillPath( const wxGraphicsPath& p , wxPolygonFillMode fillStyle = wxWINDING_RULE ) wxOVERRIDE;
-
+    virtual void ClearRectangle( wxDouble x, wxDouble y, wxDouble w, wxDouble h ) wxOVERRIDE;
+    virtual void DrawRectangle( wxDouble x, wxDouble y, wxDouble w, wxDouble h) wxOVERRIDE;
+    
     virtual void Translate( wxDouble dx , wxDouble dy ) wxOVERRIDE;
     virtual void Scale( wxDouble xScale , wxDouble yScale ) wxOVERRIDE;
     virtual void Rotate( wxDouble angle ) wxOVERRIDE;
@@ -732,15 +734,15 @@ void wxCairoPenData::Init()
     m_count = 0;
 }
 
-wxCairoPenData::wxCairoPenData( wxGraphicsRenderer* renderer, const wxPen &pen )
-    : wxCairoPenBrushBaseData(renderer, pen.GetColour(), pen.IsTransparent())
+wxCairoPenData::wxCairoPenData( wxGraphicsRenderer* renderer, const wxGraphicsPenInfo &info )
+    : wxCairoPenBrushBaseData(renderer, info.GetColour(), info.IsTransparent())
 {
     Init();
-    m_width = pen.GetWidth();
+    m_width = info.GetWidth();
     if (m_width <= 0.0)
         m_width = 0.1;
 
-    switch ( pen.GetCap() )
+    switch ( info.GetCap() )
     {
     case wxCAP_ROUND :
         m_cap = CAIRO_LINE_CAP_ROUND;
@@ -759,7 +761,7 @@ wxCairoPenData::wxCairoPenData( wxGraphicsRenderer* renderer, const wxPen &pen )
         break;
     }
 
-    switch ( pen.GetJoin() )
+    switch ( info.GetJoin() )
     {
     case wxJOIN_BEVEL :
         m_join = CAIRO_LINE_JOIN_BEVEL;
@@ -796,7 +798,7 @@ wxCairoPenData::wxCairoPenData( wxGraphicsRenderer* renderer, const wxPen &pen )
         9.0 , 6.0 , 3.0 , 3.0
     };
 
-    switch ( pen.GetStyle() )
+    switch ( info.GetStyle() )
     {
     case wxPENSTYLE_SOLID :
         break;
@@ -826,7 +828,7 @@ wxCairoPenData::wxCairoPenData( wxGraphicsRenderer* renderer, const wxPen &pen )
     case wxPENSTYLE_USER_DASH :
         {
             wxDash *wxdashes ;
-            m_count = pen.GetDashes( &wxdashes ) ;
+            m_count = info.GetDashes( &wxdashes ) ;
             if ((wxdashes != NULL) && (m_count > 0))
             {
                 m_userLengths = new double[m_count] ;
@@ -847,14 +849,17 @@ wxCairoPenData::wxCairoPenData( wxGraphicsRenderer* renderer, const wxPen &pen )
     case wxPENSTYLE_STIPPLE :
     case wxPENSTYLE_STIPPLE_MASK :
     case wxPENSTYLE_STIPPLE_MASK_OPAQUE :
-        InitStipple(pen.GetStipple());
+        {
+            wxBitmap stipple = info.GetStipple();
+            InitStipple(&stipple);
+        }
         break;
 
     default :
-        if ( pen.GetStyle() >= wxPENSTYLE_FIRST_HATCH
-            && pen.GetStyle() <= wxPENSTYLE_LAST_HATCH )
+        if ( info.GetStyle() >= wxPENSTYLE_FIRST_HATCH
+            && info.GetStyle() <= wxPENSTYLE_LAST_HATCH )
         {
-            InitHatch(static_cast<wxHatchStyle>(pen.GetStyle()));
+            InitHatch(static_cast<wxHatchStyle>(info.GetStyle()));
         }
         break;
     }
@@ -1008,6 +1013,10 @@ wxCairoFontData::wxCairoFontData(wxGraphicsRenderer* renderer,
                                  int flags,
                                  const wxColour& col) :
     wxGraphicsObjectRefData(renderer)
+#ifdef __WXGTK__
+    , m_wxfont(wxFontInfo(wxSize(sizeInPixels, sizeInPixels))
+                .AllFlags(flags).FaceName(facename))
+#endif
 {
     InitColour(col);
 
@@ -1041,7 +1050,7 @@ wxCairoFontData::~wxCairoFontData()
 #endif
 }
 
-bool wxCairoFontData::Apply( wxGraphicsContext* context )
+void wxCairoFontData::Apply( wxGraphicsContext* context )
 {
     cairo_t * ctext = (cairo_t*) context->GetNativeContext();
     cairo_set_source_rgba(ctext,m_red,m_green, m_blue,m_alpha);
@@ -1050,14 +1059,14 @@ bool wxCairoFontData::Apply( wxGraphicsContext* context )
     {
         // Nothing to do, the caller uses Pango layout functions to do
         // everything.
-        return true;
+        return;
     }
 #elif defined(__WXMAC__)
     if ( m_font )
     {
         cairo_set_font_face(ctext, m_font);
         cairo_set_font_size(ctext, m_size );
-        return true;
+        return;
     }
 #endif
 
@@ -1065,10 +1074,6 @@ bool wxCairoFontData::Apply( wxGraphicsContext* context )
     // we're using toy Cairo API even under wxGTK/wxMac.
     cairo_select_font_face(ctext, m_fontName, m_slant, m_weight );
     cairo_set_font_size(ctext, m_size );
-
-    // Indicate that we don't use native fonts for the platforms which care
-    // about this (currently only wxGTK).
-    return false;
 }
 
 //-----------------------------------------------------------------------------
@@ -1445,7 +1450,7 @@ wxCairoBitmapData::wxCairoBitmapData( wxGraphicsRenderer* renderer, const wxBitm
         isSrcBpp32
 #elif defined(__WXGTK3__)
         isSrcBpp32 || bmp.GetMask() != NULL
-#elif defined(__WXMSW__)
+#elif defined(__WXMSW__) || defined(__WXOSX__)
         (isSrcBpp32 && bmp.HasAlpha()) || bmp.GetMask() != NULL
 #else
         isSrcBpp32
@@ -1538,7 +1543,7 @@ wxCairoBitmapData::wxCairoBitmapData( wxGraphicsRenderer* renderer, const wxBitm
         }
     }
 
-#if defined(__WXMSW__) || defined(__WXGTK3__)
+#if defined(__WXMSW__) || defined(__WXGTK3__) || defined(__WXOSX__)
     // if there is a mask, set the alpha bytes in the target buffer to 
     // fully transparent or fully opaque
 #if defined(__WXMSW__)
@@ -1559,7 +1564,12 @@ wxCairoBitmapData::wxCairoBitmapData( wxGraphicsRenderer* renderer, const wxBitm
             wxUint32* const rowStartDst = data;
             for (int x=0; x < pixData.GetWidth(); x++)
             {
+                // contrary to the others OSX has natively its masked out pixels as white
+#ifdef __WXOSX__
+                if (p.Red() == 0xFF && p.Green() == 0xFF && p.Blue() == 0xFF )
+#else
                 if (p.Red()+p.Green()+p.Blue() == 0)
+#endif
                     *data = 0;
                 else
                     *data = (wxALPHA_OPAQUE << 24) | (*data & 0x00FFFFFF);
@@ -2398,10 +2408,21 @@ void wxCairoContext::ResetClip()
 void wxCairoContext::GetClipBox(wxDouble* x, wxDouble* y, wxDouble* w, wxDouble* h)
 {
     double x1, y1, x2, y2;
-    cairo_clip_extents(m_context, &x1, &y1, &x2, &y2);
-    // Check if we have an empty clipping box.
-    if ( x2 - x1 <= DBL_MIN || y2 - y1 <= DBL_MIN )
+#if CAIRO_VERSION >= CAIRO_VERSION_ENCODE(1, 4, 0)
+    if ( cairo_version() >= CAIRO_VERSION_ENCODE(1, 4, 0) )
+    {
+        cairo_clip_extents(m_context, &x1, &y1, &x2, &y2);
+        // Check if we have an empty clipping box.
+        if ( x2 - x1 <= DBL_MIN || y2 - y1 <= DBL_MIN )
+            x1 = x2 = y1 = y2 = 0.0;
+    }
+    else
+#endif // Cairo >= 1.4
+    {
+        // There doesn't seem to be any way to get the clipping box with this
+        // ancient version.
         x1 = x2 = y1 = y2 = 0.0;
+    }
 
     if ( x )
         *x = x1;
@@ -2437,6 +2458,32 @@ void wxCairoContext::FillPath( const wxGraphicsPath& path , wxPolygonFillMode fi
         cairo_set_fill_rule(m_context,fillStyle==wxODDEVEN_RULE ? CAIRO_FILL_RULE_EVEN_ODD : CAIRO_FILL_RULE_WINDING);
         cairo_fill(m_context);
         path.UnGetNativePath(cp);
+    }
+}
+
+void wxCairoContext::ClearRectangle( wxDouble x, wxDouble y, wxDouble w, wxDouble h )
+{
+    cairo_save(m_context);
+    cairo_set_operator(m_context, CAIRO_OPERATOR_CLEAR);
+    cairo_rectangle (m_context, x, y, w, h);
+    cairo_fill (m_context);
+    cairo_restore(m_context);
+}
+
+void wxCairoContext::DrawRectangle( wxDouble x, wxDouble y, wxDouble w, wxDouble h )
+{
+    if ( !m_brush.IsNull() )
+    {
+        ((wxCairoBrushData*)m_brush.GetRefData())->Apply(this);
+        cairo_rectangle(m_context, x, y, w, h);
+        cairo_fill(m_context);
+    }
+    if ( !m_pen.IsNull() )
+    {
+        wxCairoOffsetHelper helper( m_context, ShouldOffset() ) ;
+        ((wxCairoPenData*)m_pen.GetRefData())->Apply(this);
+        cairo_rectangle(m_context, x, y, w, h);
+        cairo_stroke(m_context);
     }
 }
 
@@ -2567,11 +2614,16 @@ void wxCairoContext::DoDrawText(const wxString& str, wxDouble x, wxDouble y)
     if ( !data )
         return;
 
-    if ( ((wxCairoFontData*)m_font.GetRefData())->Apply(this) )
-    {
+    wxCairoFontData* const
+        fontData = static_cast<wxCairoFontData*>(m_font.GetRefData());
+
+    fontData->Apply(this);
+
 #ifdef __WXGTK__
-        PangoLayout *layout = pango_cairo_create_layout (m_context);
-        const wxFont& font = static_cast<wxCairoFontData*>(m_font.GetRefData())->GetFont();
+    const wxFont& font = fontData->GetFont();
+    if ( font.IsOk() )
+    {
+        wxGtkObject<PangoLayout> layout(pango_cairo_create_layout (m_context));
         pango_layout_set_font_description(layout, font.GetNativeFontInfo()->description);
         pango_layout_set_text(layout, data, data.length());
         font.GTKSetPangoAttrs(layout);
@@ -2579,12 +2631,10 @@ void wxCairoContext::DoDrawText(const wxString& str, wxDouble x, wxDouble y)
         cairo_move_to(m_context, x, y);
         pango_cairo_show_layout (m_context, layout);
 
-        g_object_unref (layout);
-
         // Don't use Cairo text API, we already did everything.
         return;
-#endif
     }
+#endif // __WXGTK__
 
     // Cairo's x,y for drawing text is at the baseline, so we need to adjust
     // the position we move to by the ascent.
@@ -2609,16 +2659,26 @@ void wxCairoContext::GetTextExtent( const wxString &str, wxDouble *width, wxDoub
     if ( externalLeading )
         *externalLeading = 0;
 
-    if ( str.empty())
+    // We can skip computing the string width and height if it is empty, but
+    // not its descent and/or external leading, which still needs to be
+    // returned even for an empty string.
+    if ( str.empty() && !descent && !externalLeading )
         return;
 
-    if ( ((wxCairoFontData*)m_font.GetRefData())->Apply((wxCairoContext*)this) )
-    {
+    wxCairoFontData* const
+        fontData = static_cast<wxCairoFontData*>(m_font.GetRefData());
+
 #ifdef __WXGTK__
+    // Use Pango instead of Cairo toy font API if we have the font.
+    const wxFont& font = fontData->GetFont();
+    if ( font.IsOk() )
+    {
+        // Note that there is no need to call Apply() at all in this case, it
+        // just sets the text colour, but we don't care about this when
+        // measuring its extent.
         int w, h;
 
-        PangoLayout *layout = pango_cairo_create_layout (m_context);
-        const wxFont& font = static_cast<wxCairoFontData*>(m_font.GetRefData())->GetFont();
+        wxGtkObject<PangoLayout> layout(pango_cairo_create_layout (m_context));
         pango_layout_set_font_description(layout, font.GetNativeFontInfo()->description);
         const wxCharBuffer data = str.utf8_str();
         if ( !data )
@@ -2638,10 +2698,11 @@ void wxCairoContext::GetTextExtent( const wxString &str, wxDouble *width, wxDoub
             pango_layout_iter_free(iter);
             *descent = h - PANGO_PIXELS(baseline);
         }
-        g_object_unref (layout);
         return;
-#endif
     }
+#endif // __WXGTK__
+
+    fontData->Apply(const_cast<wxCairoContext*>(this));
 
     if (width)
     {
@@ -2685,7 +2746,7 @@ void wxCairoContext::GetPartialTextExtents(const wxString& text, wxArrayDouble& 
     int w = 0;
     if (data.length())
     {
-        PangoLayout* layout = pango_cairo_create_layout(m_context);
+        wxGtkObject<PangoLayout> layout(pango_cairo_create_layout(m_context));
         const wxFont& font = static_cast<wxCairoFontData*>(m_font.GetRefData())->GetFont();
         pango_layout_set_font_description(layout, font.GetNativeFontInfo()->description);
         pango_layout_set_text(layout, data, data.length());
@@ -2697,7 +2758,6 @@ void wxCairoContext::GetPartialTextExtents(const wxString& text, wxArrayDouble& 
             widths.Add(PANGO_PIXELS(w));
         } while (pango_layout_iter_next_cluster(iter));
         pango_layout_iter_free(iter);
-        g_object_unref(layout);
     }
     size_t i = widths.GetCount();
     const size_t len = text.length();
@@ -2868,7 +2928,7 @@ public :
         wxDouble tx=0.0, wxDouble ty=0.0) wxOVERRIDE;
 
 
-    virtual wxGraphicsPen CreatePen(const wxPen& pen) wxOVERRIDE ;
+    virtual wxGraphicsPen CreatePen(const wxGraphicsPenInfo& info) wxOVERRIDE ;
 
     virtual wxGraphicsBrush CreateBrush(const wxBrush& brush ) wxOVERRIDE ;
 
@@ -3044,13 +3104,13 @@ wxGraphicsMatrix wxCairoRenderer::CreateMatrix( wxDouble a, wxDouble b, wxDouble
     return m;
 }
 
-wxGraphicsPen wxCairoRenderer::CreatePen(const wxPen& pen)
+wxGraphicsPen wxCairoRenderer::CreatePen(const wxGraphicsPenInfo& info)
 {
     wxGraphicsPen p;
     ENSURE_LOADED_OR_RETURN(p);
-    if (pen.IsOk() && pen.GetStyle() != wxPENSTYLE_TRANSPARENT)
+    if (info.GetStyle() != wxPENSTYLE_TRANSPARENT)
     {
-        p.SetRefData(new wxCairoPenData( this, pen ));
+        p.SetRefData(new wxCairoPenData( this, info ));
     }
     return p;
 }

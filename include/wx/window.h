@@ -48,22 +48,6 @@
     #define wxUSE_MENUS_NATIVE wxUSE_MENUS
 #endif // __WXUNIVERSAL__/!__WXUNIVERSAL__
 
-
-// Define this macro if the corresponding operating system handles the state
-// of children windows automatically when the parent is enabled/disabled.
-// Otherwise wx itself must ensure that when the parent is disabled its
-// children are disabled too, and their initial state is restored when the
-// parent is enabled back.
-#if defined(__WXMSW__)
-    // must do everything ourselves
-    #undef wxHAS_NATIVE_ENABLED_MANAGEMENT
-#elif defined(__WXOSX__)
-    // must do everything ourselves
-    #undef wxHAS_NATIVE_ENABLED_MANAGEMENT
-#else
-    #define wxHAS_NATIVE_ENABLED_MANAGEMENT
-#endif
-
 // ----------------------------------------------------------------------------
 // forward declarations
 // ----------------------------------------------------------------------------
@@ -131,6 +115,20 @@ enum wxShowEffect
     wxSHOW_EFFECT_BLEND,
     wxSHOW_EFFECT_EXPAND,
     wxSHOW_EFFECT_MAX
+};
+
+// Values for EnableTouchEvents() mask.
+enum
+{
+    wxTOUCH_NONE                    = 0x0000,
+    wxTOUCH_VERTICAL_PAN_GESTURE    = 0x0001,
+    wxTOUCH_HORIZONTAL_PAN_GESTURE  = 0x0002,
+    wxTOUCH_PAN_GESTURES            = wxTOUCH_VERTICAL_PAN_GESTURE |
+                                      wxTOUCH_HORIZONTAL_PAN_GESTURE,
+    wxTOUCH_ZOOM_GESTURE            = 0x0004,
+    wxTOUCH_ROTATE_GESTURE          = 0x0008,
+    wxTOUCH_PRESS_GESTURES          = 0x0010,
+    wxTOUCH_ALL_GESTURES            = 0x001f
 };
 
 // flags for SendSizeEvent()
@@ -402,15 +400,19 @@ public:
         // returns the results.
     virtual wxSize GetEffectiveMinSize() const;
 
+#if WXWIN_COMPATIBILITY_2_8
     wxDEPRECATED_MSG("use GetEffectiveMinSize() instead")
     wxSize GetBestFittingSize() const;
+#endif // WXWIN_COMPATIBILITY_2_8
 
         // A 'Smart' SetSize that will fill in default size values with 'best'
         // size.  Sets the minsize to what was passed in.
     void SetInitialSize(const wxSize& size=wxDefaultSize);
 
+#if WXWIN_COMPATIBILITY_2_8
     wxDEPRECATED_MSG("use SetInitialSize() instead")
     void SetBestFittingSize(const wxSize& size=wxDefaultSize);
+#endif // WXWIN_COMPATIBILITY_2_8
 
 
         // the generic centre function - centers the window on parent by`
@@ -1029,6 +1031,13 @@ public:
     virtual bool HasCapture() const
         { return (wxWindow *)this == GetCapture(); }
 
+        // enable the specified touch events for this window, return false if
+        // the requested events are not supported
+    virtual bool EnableTouchEvents(int WXUNUSED(eventsMask))
+    {
+        return false;
+    }
+
     // painting the window
     // -------------------
 
@@ -1060,6 +1069,9 @@ public:
 
         // adjust DC for drawing on this window
     virtual void PrepareDC( wxDC & WXUNUSED(dc) ) { }
+
+        // enable or disable double buffering
+    virtual void SetDoubleBuffered(bool WXUNUSED(on)) { }
 
         // return true if the window contents is double buffered by the system
     virtual bool IsDoubleBuffered() const { return false; }
@@ -1123,6 +1135,10 @@ public:
     {
         return m_hasBgCol;
     }
+    bool UseBackgroundColour() const
+    {
+        return UseBgCol();
+    }
 
     virtual bool SetForegroundColour(const wxColour& colour);
     void SetOwnForegroundColour(const wxColour& colour)
@@ -1131,6 +1147,14 @@ public:
             m_inheritFgCol = false;
     }
     wxColour GetForegroundColour() const;
+    bool UseForegroundColour() const
+    {
+        return m_hasFgCol;
+    }
+    bool InheritsForegroundColour() const
+    {
+        return m_inheritFgCol;
+    }
 
         // Set/get the background style.
     virtual bool SetBackgroundStyle(wxBackgroundStyle style);
@@ -1738,10 +1762,12 @@ protected:
     // recalculated each time the value is needed.
     wxSize m_bestSizeCache;
 
+#if WXWIN_COMPATIBILITY_2_8
     wxDEPRECATED_MSG("use SetInitialSize() instead.")
     void SetBestSize(const wxSize& size);
     wxDEPRECATED_MSG("use SetInitialSize() instead.")
     virtual void SetInitialBestSize(const wxSize& size);
+#endif // WXWIN_COMPATIBILITY_2_8
 
 
 
@@ -1898,7 +1924,7 @@ private:
 };
 
 
-
+#if WXWIN_COMPATIBILITY_2_8
 // Inlines for some deprecated methods
 inline wxSize wxWindowBase::GetBestFittingSize() const
 {
@@ -1919,6 +1945,7 @@ inline void wxWindowBase::SetInitialBestSize(const wxSize& size)
 {
     SetInitialSize(size);
 }
+#endif // WXWIN_COMPATIBILITY_2_8
 
 
 // ----------------------------------------------------------------------------

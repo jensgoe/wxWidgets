@@ -40,6 +40,12 @@
 #include <dwrite.h>
 #include <wincodec.h>
 
+#ifdef __MINGW64_TOOLCHAIN__
+#ifndef DWRITE_E_NOFONT
+#define DWRITE_E_NOFONT _HRESULT_TYPEDEF_(0x88985002L)
+#endif
+#endif
+
 #if wxD2D_DEVICE_CONTEXT_SUPPORTED
 #include <D3D11.h>
 #include <D2d1_1.h>
@@ -72,6 +78,7 @@
 #include "wx/private/graphics.h"
 #include "wx/stack.h"
 #include "wx/sharedptr.h"
+#include "wx/msw/private/graphicsd2d.h"
 
 // This must be the last header included to only affect the DEFINE_GUID()
 // occurrences below but not any GUIDs declared in the standard files included
@@ -219,11 +226,25 @@ wxDirect2D::DWriteCreateFactory_t wxDirect2D::DWriteCreateFactory = NULL;
 DEFINE_GUID(wxIID_IWICImagingFactory,
             0xec5ec8a9, 0xc395, 0x4314, 0x9c, 0x77, 0x54, 0xd7, 0xa9, 0x35, 0xff, 0x70);
 
+DEFINE_GUID(wxIID_ID2D1Factory,
+            0x06152247, 0x6f50, 0x465a, 0x92, 0x45, 0x11, 0x8b, 0xfd, 0x3b, 0x60, 0x07);
+
 DEFINE_GUID(wxIID_IDWriteFactory,
             0xb859ee5a, 0xd838, 0x4b5b, 0xa2, 0xe8, 0x1a, 0xdc, 0x7d, 0x93, 0xdb, 0x48);
 
 DEFINE_GUID(wxIID_IWICBitmapSource,
             0x00000120, 0xa8f2, 0x4877, 0xba, 0x0a, 0xfd, 0x2b, 0x66, 0x45, 0xfb, 0x94);
+
+DEFINE_GUID(GUID_WICPixelFormat32bppPBGRA,
+            0x6fddc324, 0x4e03, 0x4bfe, 0xb1, 0x85, 0x3d, 0x77, 0x76, 0x8d, 0xc9, 0x10);
+
+DEFINE_GUID(GUID_WICPixelFormat32bppBGR,
+            0x6fddc324, 0x4e03, 0x4bfe, 0xb1, 0x85, 0x3d, 0x77, 0x76, 0x8d, 0xc9, 0x0e);
+
+#ifndef CLSID_WICImagingFactory
+DEFINE_GUID(CLSID_WICImagingFactory,
+            0xcacaf262, 0x9370, 0x4615, 0xa1, 0x3b, 0x9f, 0x55, 0x39, 0xda, 0x4c, 0xa);
+#endif
 
 // Implementation of the Direct2D functions
 HRESULT WINAPI wxD2D1CreateFactory(
@@ -297,6 +318,39 @@ IWICImagingFactory* wxWICImagingFactory()
         wxCHECK_HRESULT_RET_PTR(hr);
     }
     return gs_WICImagingFactory;
+}
+
+static ID2D1Factory* gs_ID2D1Factory = NULL;
+
+ID2D1Factory* wxD2D1Factory()
+{
+    if (!wxDirect2D::Initialize())
+        return NULL;
+
+    if (gs_ID2D1Factory == NULL)
+    {
+        D2D1_FACTORY_OPTIONS factoryOptions = {D2D1_DEBUG_LEVEL_NONE};
+
+        // According to
+        // https://msdn.microsoft.com/en-us/library/windows/desktop/ee794287(v=vs.85).aspx
+        // the Direct2D Debug Layer is only available starting with Windows 8
+        // and Visual Studio 2012.
+#if defined(__WXDEBUG__) && defined(__VISUALC__) && wxCHECK_VISUALC_VERSION(11)
+        if ( wxGetWinVersion() >= wxWinVersion_8 )
+        {
+            factoryOptions.debugLevel = D2D1_DEBUG_LEVEL_WARNING;
+        }
+#endif  //__WXDEBUG__
+
+        HRESULT hr = wxDirect2D::D2D1CreateFactory(
+            D2D1_FACTORY_TYPE_SINGLE_THREADED,
+            wxIID_ID2D1Factory,
+            &factoryOptions,
+            reinterpret_cast<void**>(&gs_ID2D1Factory)
+            );
+        wxCHECK_HRESULT_RET_PTR(hr);
+    }
+    return gs_ID2D1Factory;
 }
 
 static IDWriteFactory* gs_IDWriteFactory = NULL;
@@ -2458,7 +2512,9 @@ wxBrushStyle wxConvertPenStyleToBrushStyle(wxPenStyle penStyle)
 class wxD2DPenData : public wxGraphicsObjectRefData, public wxD2DManagedGraphicsData
 {
 public:
-    wxD2DPenData(wxGraphicsRenderer* renderer, ID2D1Factory* direct2dFactory, const wxPen& pen);
+    wxD2DPenData(wxGraphicsRenderer* renderer,
+                 ID2D1Factory* direct2dFactory,
+                 const wxGraphicsPenInfo& info);
 
     void CreateStrokeStyle(ID2D1Factory* const direct2dfactory);
 
@@ -2474,9 +2530,9 @@ public:
     }
 
 private:
-    // We store the source pen for later when we need to recreate the
-    // device-dependent resources.
-    const wxPen m_sourcePen;
+    // We store the original pen description for later when we need to recreate
+    // the device-dependent resources.
+    const wxGraphicsPenInfo m_penInfo;
 
     // A stroke style is a device-independent resource.
     // Describes the caps, miter limit, line join, and dash information.
@@ -2496,26 +2552,28 @@ private:
 wxD2DPenData::wxD2DPenData(
     wxGraphicsRenderer* renderer,
     ID2D1Factory* direct2dFactory,
-    const wxPen& pen)
-    : wxGraphicsObjectRefData(renderer), m_sourcePen(pen), m_width(pen.GetWidth())
+    const wxGraphicsPenInfo& info)
+    : wxGraphicsObjectRefData(renderer),
+      m_penInfo(info),
+      m_width(info.GetWidth())
 {
     CreateStrokeStyle(direct2dFactory);
 
     wxBrush strokeBrush;
 
-    if (m_sourcePen.GetStyle() == wxPENSTYLE_STIPPLE)
+    if (m_penInfo.GetStyle() == wxPENSTYLE_STIPPLE)
     {
-        strokeBrush.SetStipple(*(m_sourcePen.GetStipple()));
+        strokeBrush.SetStipple(m_penInfo.GetStipple());
         strokeBrush.SetStyle(wxBRUSHSTYLE_STIPPLE);
     }
-    else if(wxIsHatchPenStyle(m_sourcePen.GetStyle()))
+    else if(wxIsHatchPenStyle(m_penInfo.GetStyle()))
     {
-        strokeBrush.SetStyle(wxConvertPenStyleToBrushStyle(m_sourcePen.GetStyle()));
-        strokeBrush.SetColour(m_sourcePen.GetColour());
+        strokeBrush.SetStyle(wxConvertPenStyleToBrushStyle(m_penInfo.GetStyle()));
+        strokeBrush.SetColour(m_penInfo.GetColour());
     }
     else
     {
-        strokeBrush.SetColour(m_sourcePen.GetColour());
+        strokeBrush.SetColour(m_penInfo.GetColour());
         strokeBrush.SetStyle(wxBRUSHSTYLE_SOLID);
     }
 
@@ -2524,21 +2582,21 @@ wxD2DPenData::wxD2DPenData(
 
 void wxD2DPenData::CreateStrokeStyle(ID2D1Factory* const direct2dfactory)
 {
-    D2D1_CAP_STYLE capStyle = wxD2DConvertPenCap(m_sourcePen.GetCap());
-    D2D1_LINE_JOIN lineJoin = wxD2DConvertPenJoin(m_sourcePen.GetJoin());
-    D2D1_DASH_STYLE dashStyle = wxD2DConvertPenStyle(m_sourcePen.GetStyle());
+    D2D1_CAP_STYLE capStyle = wxD2DConvertPenCap(m_penInfo.GetCap());
+    D2D1_LINE_JOIN lineJoin = wxD2DConvertPenJoin(m_penInfo.GetJoin());
+    D2D1_DASH_STYLE dashStyle = wxD2DConvertPenStyle(m_penInfo.GetStyle());
 
     int dashCount = 0;
     FLOAT* dashes = NULL;
 
     if (dashStyle == D2D1_DASH_STYLE_CUSTOM)
     {
-        dashCount = m_sourcePen.GetDashCount();
+        dashCount = m_penInfo.GetDashCount();
         dashes = new FLOAT[dashCount];
 
         for (int i = 0; i < dashCount; ++i)
         {
-            dashes[i] = m_sourcePen.GetDash()[i];
+            dashes[i] = m_penInfo.GetDash()[i];
         }
 
     }
@@ -2614,7 +2672,7 @@ wxD2DFontData::wxD2DFontData(wxGraphicsRenderer* renderer, ID2D1Factory* d2dFact
     wxCHECK_RET( n > 0, wxS("Failed to obtain font info") );
 
     // Ensure the LOGFONT object contains the correct font face name
-    if (lstrlen(logfont.lfFaceName) == 0)
+    if (logfont.lfFaceName[0] == L'\0')
     {
         // The length of the font name must not exceed LF_FACESIZE TCHARs,
         // including the terminating NULL.
@@ -2627,6 +2685,12 @@ wxD2DFontData::wxD2DFontData(wxGraphicsRenderer* renderer, ID2D1Factory* d2dFact
     }
 
     hr = gdiInterop->CreateFontFromLOGFONT(&logfont, &m_font);
+    if ( hr == DWRITE_E_NOFONT )
+    {
+        // It was attempted to create DirectWrite font from non-TrueType GDI font.
+        return;
+    }
+
     wxCHECK_RET( SUCCEEDED(hr),
                  wxString::Format("Failed to create font '%s' (HRESULT = %x)", logfont.lfFaceName, hr) );
 
@@ -3018,7 +3082,7 @@ public:
         wxCHECK_HRESULT_RET(hr);
     }
 
-    void DrawBitmap(ID2D1Image* image, D2D1_POINT_2F offset,
+    void DrawBitmap(ID2D1Bitmap* image, D2D1_POINT_2F offset,
         D2D1_RECT_F imageRectangle, wxInterpolationQuality interpolationQuality,
         wxCompositionMode compositionMode) wxOVERRIDE
     {
@@ -4093,13 +4157,19 @@ void wxD2DContext::GetTextExtent(
     wxDouble* descent,
     wxDouble* externalLeading) const
 {
+    wxCHECK_RET(!m_font.IsNull(),
+        wxS("wxD2DContext::GetTextExtent - no valid font set"));
+
     wxD2DMeasuringContext::GetTextExtent(
         wxGetD2DFontData(m_font), str, width, height, descent, externalLeading);
 }
 
 void wxD2DContext::GetPartialTextExtents(const wxString& text, wxArrayDouble& widths) const
 {
-    return wxD2DMeasuringContext::GetPartialTextExtents(
+    wxCHECK_RET(!m_font.IsNull(),
+        wxS("wxD2DContext::GetPartialTextExtents - no valid font set"));
+
+    wxD2DMeasuringContext::GetPartialTextExtents(
         wxGetD2DFontData(m_font), text, widths);
 }
 
@@ -4123,7 +4193,7 @@ bool wxD2DContext::ShouldOffset() const
 void wxD2DContext::DoDrawText(const wxString& str, wxDouble x, wxDouble y)
 {
     wxCHECK_RET(!m_font.IsNull(),
-        wxT("wxGDIPlusContext::DrawText - no valid font set"));
+        wxS("wxD2DContext::DrawText - no valid font set"));
 
     if (m_composition == wxCOMPOSITION_DEST)
         return;
@@ -4372,7 +4442,7 @@ public :
         wxDouble a = 1.0, wxDouble b = 0.0, wxDouble c = 0.0, wxDouble d = 1.0,
         wxDouble tx = 0.0, wxDouble ty = 0.0) wxOVERRIDE;
 
-    wxGraphicsPen CreatePen(const wxPen& pen) wxOVERRIDE;
+    wxGraphicsPen CreatePen(const wxGraphicsPenInfo& info) wxOVERRIDE;
 
     wxGraphicsBrush CreateBrush(const wxBrush& brush) wxOVERRIDE;
 
@@ -4442,12 +4512,9 @@ wxGraphicsRenderer* wxGraphicsRenderer::GetDirect2DRenderer()
 }
 
 wxD2DRenderer::wxD2DRenderer()
+    : m_direct2dFactory(wxD2D1Factory())
 {
-
-    HRESULT result;
-    result = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &m_direct2dFactory);
-
-    if (FAILED(result))
+    if ( m_direct2dFactory.get() == NULL )
     {
         wxFAIL_MSG("Could not create Direct2D Factory.");
     }
@@ -4541,16 +4608,16 @@ wxGraphicsMatrix wxD2DRenderer::CreateMatrix(
     return matrix;
 }
 
-wxGraphicsPen wxD2DRenderer::CreatePen(const wxPen& pen)
+wxGraphicsPen wxD2DRenderer::CreatePen(const wxGraphicsPenInfo& info)
 {
-    if ( !pen.IsOk() || pen.GetStyle() == wxPENSTYLE_TRANSPARENT )
+    if ( info.GetStyle() == wxPENSTYLE_TRANSPARENT )
     {
         return wxNullGraphicsPen;
     }
     else
     {
         wxGraphicsPen p;
-        wxD2DPenData* penData = new wxD2DPenData(this, m_direct2dFactory, pen);
+        wxD2DPenData* penData = new wxD2DPenData(this, m_direct2dFactory, info);
         p.SetRefData(penData);
         return p;
     }
@@ -4637,6 +4704,13 @@ wxImage wxD2DRenderer::CreateImageFromBitmap(const wxGraphicsBitmap& bmp)
 wxGraphicsFont wxD2DRenderer::CreateFont(const wxFont& font, const wxColour& col)
 {
     wxD2DFontData* fontData = new wxD2DFontData(this, GetD2DFactory(), font, col);
+    if ( !fontData->GetFont() )
+    {
+        // Apparently a non-TrueType font is given and hence
+        // corresponding DirectWrite font couldn't be created.
+        delete fontData;
+        return wxNullGraphicsFont;
+    }
 
     wxGraphicsFont graphicsFont;
     graphicsFont.SetRefData(fontData);
@@ -4745,6 +4819,12 @@ public:
         {
             delete gs_D2DRenderer;
             gs_D2DRenderer = NULL;
+        }
+
+        if ( gs_ID2D1Factory )
+        {
+            gs_ID2D1Factory->Release();
+            gs_ID2D1Factory = NULL;
         }
 
         ::CoUninitialize();

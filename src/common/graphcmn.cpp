@@ -26,6 +26,7 @@
     #include "wx/dcmemory.h"
     #include "wx/dcprint.h"
     #include "wx/math.h"
+    #include "wx/pen.h"
     #include "wx/region.h"
     #include "wx/log.h"
 #endif
@@ -653,12 +654,21 @@ void wxGraphicsContext::SetFont( const wxGraphicsFont& font )
     m_font = font;
 }
 
-void wxGraphicsContext::SetFont( const wxFont& font, const wxColour& colour )
+void wxGraphicsContext::SetFont(const wxFont& font, const wxColour& colour)
 {
     if ( font.IsOk() )
-        SetFont( CreateFont( font, colour ) );
+    {
+        // Change current font only if new graphics font is successfully created.
+        wxGraphicsFont grFont = CreateFont(font, colour);
+        if ( !grFont.IsSameAs(wxNullGraphicsFont) )
+        {
+            SetFont(grFont);
+        }
+    }
     else
+    {
         SetFont( wxNullGraphicsFont );
+    }
 }
 
 void wxGraphicsContext::DrawPath( const wxGraphicsPath& path, wxPolygonFillMode fillStyle )
@@ -750,6 +760,11 @@ void wxGraphicsContext::DrawRectangle( wxDouble x, wxDouble y, wxDouble w, wxDou
     DrawPath( path );
 }
 
+void wxGraphicsContext::ClearRectangle( wxDouble WXUNUSED(x), wxDouble WXUNUSED(y), wxDouble WXUNUSED(w), wxDouble WXUNUSED(h))
+{
+    
+}
+
 void wxGraphicsContext::DrawEllipse( wxDouble x, wxDouble y, wxDouble w, wxDouble h)
 {
     wxGraphicsPath path = CreatePath();
@@ -810,7 +825,36 @@ wxGraphicsPath wxGraphicsContext::CreatePath() const
 
 wxGraphicsPen wxGraphicsContext::CreatePen(const wxPen& pen) const
 {
-    return GetRenderer()->CreatePen(pen);
+    if ( !pen.IsOk() )
+        return wxGraphicsPen();
+
+    wxGraphicsPenInfo info = wxGraphicsPenInfo()
+                                .Colour(pen.GetColour())
+                                .Width(pen.GetWidth())
+                                .Style(pen.GetStyle())
+                                .Join(pen.GetJoin())
+                                .Cap(pen.GetCap())
+                                ;
+
+    if ( info.GetStyle() == wxPENSTYLE_USER_DASH )
+    {
+        wxDash *dashes;
+        if ( int nb_dashes = pen.GetDashes(&dashes) )
+            info.Dashes(nb_dashes, dashes);
+    }
+
+    if ( info.GetStyle() == wxPENSTYLE_STIPPLE )
+    {
+        if ( wxBitmap* const stipple = pen.GetStipple() )
+            info.Stipple(*stipple);
+    }
+
+    return DoCreatePen(info);
+}
+
+wxGraphicsPen wxGraphicsContext::DoCreatePen(const wxGraphicsPenInfo& info) const
+{
+    return GetRenderer()->CreatePen(info);
 }
 
 wxGraphicsBrush wxGraphicsContext::CreateBrush(const wxBrush& brush ) const

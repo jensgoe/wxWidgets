@@ -543,8 +543,14 @@ wxPG_PROP_CLASS_SPECIFIC_3          = 0x00400000
     @subsection wxLongStringProperty
 
     Like wxStringProperty, but has a button that triggers a small text editor
-    dialog. Note that in long string values, tabs are represented by "\t" and
-    line break by "\n".
+    dialog. Note that in long string values, some control characters are
+    escaped: tab is represented by "\t", line break by "\n", carriage return
+    by "\r" and backslash character by "\\". If another character is preceded
+    by backslash, the backslash is skipped.
+    Note also that depending on the system (port), some sequences of special
+    characters, like e.g. "\r\n", can be interpreted and presented in
+    a different way in the editor and therefore such sequences may not be
+    the same before and after the edition.
 
     To display custom dialog on button press, you can subclass
     wxLongStringProperty and implement OnButtonClick, like this:
@@ -971,7 +977,14 @@ public:
         @param text
             String to get the value from.
         @param flags
-            @todo docme
+            If @c wxPG_FULL_VALUE is set, the function sets complete, storable
+            value instead of displayable one (they may be different).
+            @c wxPG_PROGRAMMATIC_VALUE flag is used to indicate that value is
+            being set programmatically (i.e. operation is not caused by user
+            input).
+            If @c wxPG_REPORT_ERROR is set, a special action should be
+            performed if string couldn't have been successfully converted
+            to the valid value (e.g. a special value can be set in this case).
 
         @return @true if value was changed.
     */
@@ -2177,7 +2190,7 @@ public:
 
     /** Paints property category selection rectangle.
     */
-    virtual void DrawCaptionSelectionRect(wxWindow *win, wxDC& dc,
+    virtual void DrawCaptionSelectionRect(wxDC& dc,
                                           int x, int y, int w, int h) const;
 
     /** Utility to draw vertically centered text.
@@ -2689,28 +2702,6 @@ protected:
 
     void Init();
     void Free();
-};
-
-// -----------------------------------------------------------------------
-
-/** @class wxPGChoiceEntry
-
-    Data of a single wxPGChoices choice.
-*/
-class wxPGChoiceEntry : public wxPGCell
-{
-public:
-    wxPGChoiceEntry();
-    wxPGChoiceEntry(const wxPGChoiceEntry& other);
-    wxPGChoiceEntry( const wxString& label,
-                     int value = wxPG_INVALID_VALUE );
-
-    virtual ~wxPGChoiceEntry();
-
-    void SetValue( int value );
-    int GetValue() const;
-
-    wxPGChoiceEntry& operator=( const wxPGChoiceEntry& other );
 };
 
 // -----------------------------------------------------------------------

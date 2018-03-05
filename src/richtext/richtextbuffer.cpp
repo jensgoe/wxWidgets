@@ -9932,7 +9932,7 @@ bool wxRichTextCell::EditProperties(wxWindow* parent, wxRichTextBuffer* buffer)
     wxRichTextAttr attr;
 
     wxRichTextSelection sel;
-    if (buffer->GetRichTextCtrl())
+    if (buffer && buffer->GetRichTextCtrl())
         sel = buffer->GetRichTextCtrl()->GetSelection();
         
     if (table && buffer && buffer->GetRichTextCtrl() && sel.IsValid() &&
@@ -10105,6 +10105,7 @@ bool wxRichTextTable::Draw(wxDC& dc, wxRichTextDrawingContext& context, const wx
 }
 
     // Helper function for Layout() that clears the space needed by a cell with rowspan > 1
+static
 int GetRowspanDisplacement(const wxRichTextTable* table, int row, int col, int paddingX, const wxArrayInt& colWidths)
 {
     // If one or more cells above-left of this one has rowspan > 1, the affected cells below it
@@ -10146,6 +10147,7 @@ int GetRowspanDisplacement(const wxRichTextTable* table, int row, int col, int p
 }
 
     // Helper function for Layout() that expands any cell with rowspan > 1
+static
 void ExpandCellsWithRowspan(const wxRichTextTable* table, int paddingY, int& bottomY, wxDC& dc, wxRichTextDrawingContext& context, const wxRect& availableSpace, int style)
 {
     // This is called when the table's cell layout is otherwise complete.
