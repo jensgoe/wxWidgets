@@ -66,6 +66,7 @@ set(TEST_SRC
     strings/vararg.cpp
     strings/crt.cpp
     strings/vsnprintf.cpp
+    smartrowheightcache/smartrowheightcachetest.cpp
     streams/datastreamtest.cpp
     streams/ffilestream.cpp
     streams/fileback.cpp

@@ -523,6 +523,9 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath="..\..\src\common\smartrowheightcache.cpp">
+			</File>
+			<File
 				RelativePath="..\..\src\common\sstream.cpp">
 			</File>
 			<File

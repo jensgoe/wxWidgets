@@ -408,6 +408,7 @@ MONODLL_OBJECTS =  \
 	$(OBJS)\monodll_process.o \
 	$(OBJS)\monodll_regex.o \
 	$(OBJS)\monodll_stdpbase.o \
+	$(OBJS)\monodll_smartrowheightcache.o \
 	$(OBJS)\monodll_sstream.o \
 	$(OBJS)\monodll_stdstream.o \
 	$(OBJS)\monodll_stopwatch.o \
@@ -561,6 +562,7 @@ MONOLIB_OBJECTS =  \
 	$(OBJS)\monolib_process.o \
 	$(OBJS)\monolib_regex.o \
 	$(OBJS)\monolib_stdpbase.o \
+	$(OBJS)\monolib_smartrowheightcache.o \
 	$(OBJS)\monolib_sstream.o \
 	$(OBJS)\monolib_stdstream.o \
 	$(OBJS)\monolib_stopwatch.o \
@@ -710,6 +712,7 @@ BASEDLL_OBJECTS =  \
 	$(OBJS)\basedll_process.o \
 	$(OBJS)\basedll_regex.o \
 	$(OBJS)\basedll_stdpbase.o \
+	$(OBJS)\basedll_smartrowheightcache.o \
 	$(OBJS)\basedll_sstream.o \
 	$(OBJS)\basedll_stdstream.o \
 	$(OBJS)\basedll_stopwatch.o \
@@ -843,6 +846,7 @@ BASELIB_OBJECTS =  \
 	$(OBJS)\baselib_process.o \
 	$(OBJS)\baselib_regex.o \
 	$(OBJS)\baselib_stdpbase.o \
+	$(OBJS)\baselib_smartrowheightcache.o \
 	$(OBJS)\baselib_sstream.o \
 	$(OBJS)\baselib_stdstream.o \
 	$(OBJS)\baselib_stopwatch.o \
@@ -6767,6 +6771,9 @@ $(OBJS)\monodll_regex.o: ../../src/common/regex.cpp
 $(OBJS)\monodll_stdpbase.o: ../../src/common/stdpbase.cpp
 	$(CXX) -c -o $@ $(MONODLL_CXXFLAGS) $(CPPDEPS) $<
 
+$(OBJS)\monodll_smartrowheightcache.o: ../../src/common/smartrowheightcache.cpp
+	$(CXX) -c -o $@ $(MONODLL_CXXFLAGS) $(CPPDEPS) $<
+
 $(OBJS)\monodll_sstream.o: ../../src/common/sstream.cpp
 	$(CXX) -c -o $@ $(MONODLL_CXXFLAGS) $(CPPDEPS) $<
 
@@ -9313,6 +9320,9 @@ $(OBJS)\monolib_regex.o: ../../src/common/regex.cpp
 	$(CXX) -c -o $@ $(MONOLIB_CXXFLAGS) $(CPPDEPS) $<
 
 $(OBJS)\monolib_stdpbase.o: ../../src/common/stdpbase.cpp
+	$(CXX) -c -o $@ $(MONOLIB_CXXFLAGS) $(CPPDEPS) $<
+
+$(OBJS)\monolib_smartrowheightcache.o: ../../src/common/smartrowheightcache.cpp
 	$(CXX) -c -o $@ $(MONOLIB_CXXFLAGS) $(CPPDEPS) $<
 
 $(OBJS)\monolib_sstream.o: ../../src/common/sstream.cpp
@@ -11863,6 +11873,9 @@ $(OBJS)\basedll_regex.o: ../../src/common/regex.cpp
 $(OBJS)\basedll_stdpbase.o: ../../src/common/stdpbase.cpp
 	$(CXX) -c -o $@ $(BASEDLL_CXXFLAGS) $(CPPDEPS) $<
 
+$(OBJS)\basedll_smartrowheightcache.o: ../../src/common/smartrowheightcache.cpp
+	$(CXX) -c -o $@ $(BASEDLL_CXXFLAGS) $(CPPDEPS) $<
+
 $(OBJS)\basedll_sstream.o: ../../src/common/sstream.cpp
 	$(CXX) -c -o $@ $(BASEDLL_CXXFLAGS) $(CPPDEPS) $<
 
@@ -12206,6 +12219,9 @@ $(OBJS)\baselib_regex.o: ../../src/common/regex.cpp
 	$(CXX) -c -o $@ $(BASELIB_CXXFLAGS) $(CPPDEPS) $<
 
 $(OBJS)\baselib_stdpbase.o: ../../src/common/stdpbase.cpp
+	$(CXX) -c -o $@ $(BASELIB_CXXFLAGS) $(CPPDEPS) $<
+
+$(OBJS)\baselib_smartrowheightcache.o: ../../src/common/smartrowheightcache.cpp
 	$(CXX) -c -o $@ $(BASELIB_CXXFLAGS) $(CPPDEPS) $<
 
 $(OBJS)\baselib_sstream.o: ../../src/common/sstream.cpp
