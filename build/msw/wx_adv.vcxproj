@@ -507,6 +507,7 @@
     <ClCompile Include="..\..\src\generic\treelist.cpp" />
     <ClCompile Include="..\..\src\generic\wizard.cpp" />
     <ClCompile Include="..\..\src\common\addremovectrl.cpp" />
+    <ClCompile Include="..\..\src\common\smartrowheightcache.cpp" />
     <ClCompile Include="..\..\src\generic\activityindicator.cpp" />
     <ClCompile Include="..\..\src\msw\rt\notifmsgrt.cpp" />
   </ItemGroup>

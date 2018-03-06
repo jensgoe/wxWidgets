@@ -738,6 +738,10 @@
 			UniqueIdentifier="{A6A5C30D-BDB6-5050-906D-10A96065136C}"
 			>
 			<File
+				RelativePath="..\..\src\common\smartrowheightcache.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\common\addremovectrl.cpp"
 				>
 			</File>

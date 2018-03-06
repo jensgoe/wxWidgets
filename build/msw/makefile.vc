@@ -9609,6 +9609,11 @@ $(OBJS)\monodll_wizard.obj: ..\..\src\generic\wizard.cpp
 !endif
 
 !if "$(USE_GUI)" == "1"
+$(OBJS)\monodll_smartrowheightcache.obj: ..\..\src\common\smartrowheightcache.cpp
+	$(CXX) /c /nologo /TP /Fo$@ $(MONODLL_CXXFLAGS) ..\..\src\common\smartrowheightcache.cpp
+!endif
+
+!if "$(USE_GUI)" == "1"
 $(OBJS)\monodll_addremovectrl.obj: ..\..\src\common\addremovectrl.cpp
 	$(CXX) /c /nologo /TP /Fo$@ $(MONODLL_CXXFLAGS) ..\..\src\common\addremovectrl.cpp
 !endif
@@ -12152,6 +12157,11 @@ $(OBJS)\monolib_treelist.obj: ..\..\src\generic\treelist.cpp
 !if "$(USE_GUI)" == "1"
 $(OBJS)\monolib_wizard.obj: ..\..\src\generic\wizard.cpp
 	$(CXX) /c /nologo /TP /Fo$@ $(MONOLIB_CXXFLAGS) ..\..\src\generic\wizard.cpp
+!endif
+
+!if "$(USE_GUI)" == "1"
+$(OBJS)\monolib_smartrowheightcache.obj: ..\..\src\common\smartrowheightcache.cpp
+	$(CXX) /c /nologo /TP /Fo$@ $(MONOLIB_CXXFLAGS) ..\..\src\common\smartrowheightcache.cpp
 !endif
 
 !if "$(USE_GUI)" == "1"
@@ -16079,6 +16089,9 @@ $(OBJS)\advdll_treelist.obj: ..\..\src\generic\treelist.cpp
 $(OBJS)\advdll_wizard.obj: ..\..\src\generic\wizard.cpp
 	$(CXX) /c /nologo /TP /Fo$@ $(ADVDLL_CXXFLAGS) ..\..\src\generic\wizard.cpp
 
+$(OBJS)\advdll_smartrowheightcache.obj: ..\..\src\common\smartrowheightcache.cpp
+	$(CXX) /c /nologo /TP /Fo$@ $(ADVDLL_CXXFLAGS) ..\..\src\common\smartrowheightcache.cpp
+
 $(OBJS)\advdll_addremovectrl.obj: ..\..\src\common\addremovectrl.cpp
 	$(CXX) /c /nologo /TP /Fo$@ $(ADVDLL_CXXFLAGS) ..\..\src\common\addremovectrl.cpp
 
@@ -16240,6 +16253,9 @@ $(OBJS)\advlib_treelist.obj: ..\..\src\generic\treelist.cpp
 
 $(OBJS)\advlib_wizard.obj: ..\..\src\generic\wizard.cpp
 	$(CXX) /c /nologo /TP /Fo$@ $(ADVLIB_CXXFLAGS) ..\..\src\generic\wizard.cpp
+
+$(OBJS)\advlib_smartrowheightcache.obj: ..\..\src\common\smartrowheightcache.cpp
+	$(CXX) /c /nologo /TP /Fo$@ $(ADVLIB_CXXFLAGS) ..\..\src\common\smartrowheightcache.cpp
 
 $(OBJS)\advlib_addremovectrl.obj: ..\..\src\common\addremovectrl.cpp
 	$(CXX) /c /nologo /TP /Fo$@ $(ADVLIB_CXXFLAGS) ..\..\src\common\addremovectrl.cpp
