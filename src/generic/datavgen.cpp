@@ -53,7 +53,7 @@
 #include "wx/stopwatch.h"
 #include "wx/weakref.h"
 #include "wx/hashmap.h"
-#include "wx/dynarray.h"
+#include "wx/vector.h"
 #include "wx/generic/private/markuptext.h"
 #include "wx/generic/private/widthcalc.h"
 #if wxUSE_ACCESSIBILITY
@@ -688,33 +688,60 @@ private:
 //-----------------------------------------------------------------------------
 
 
-struct RangeEntity
+// struct describing a range of rows which contains rows <from> .. <to> # TODO: to-1
+struct RowRange
 {
     unsigned int from;
     unsigned int to;
 };
 
-WX_DECLARE_OBJARRAY(RangeEntity, ArrayOfRangeEntities);
+WX_DECLARE_OBJARRAY(RowRange, ArrayOfRowRange);
 #include "wx/arrimpl.cpp"
-WX_DEFINE_OBJARRAY(ArrayOfRangeEntities)
+WX_DEFINE_OBJARRAY(ArrayOfRowRange)
 
-class RowRange
+/**
+    @class RowRanges
+    A helper class that manages a set of RowRange objects.
+    It stores the indices that are members of a group in a memory
+    efficiant way.
+*/
+class RowRanges
 {
 public:
+    /**
+        Adds a row index to this group by adding it to an existing RowRange
+        or by creating a new one.
+    */
     void Add(const unsigned int idx);
-    void RemoveFrom(const unsigned int idx);
-    bool Has(const unsigned int idx);
-    unsigned int Count();
-    unsigned int CountTo(const unsigned int idx);
-    unsigned int GetSize(); // for debugging statistics
+
+    /**
+        Removes a row index and all indices after idx from this group.
+    */
+    void Remove(unsigned int idx);
+
+    /**
+        Checks whether a row index is contained in this group.
+    */
+    bool Has(unsigned int idx) const;
+
+    /**
+        Returns the number of row indices that are contained in this group.
+    */
+    unsigned int CountAll() const;
+
+    /**
+        Returns the number of rows that are in this group before the given index.
+    */
+    unsigned int CountTo(unsigned int idx) const;
+    unsigned int GetSize() const; // for debugging statistics
 
 private:
-    ArrayOfRangeEntities m_ranges;
+    ArrayOfRowRange m_ranges;
     void CleanUp(int rngIdx);
 };
 
-WX_DECLARE_HASH_MAP(unsigned int, RowRange*, wxIntegerHash, wxIntegerEqual,
-    HeightToRowRangeMap);
+WX_DECLARE_HASH_MAP(unsigned int, RowRanges*, wxIntegerHash, wxIntegerEqual,
+    HeightToRowRangesMap);
 
 /**
     @class HeightCache
@@ -777,7 +804,7 @@ public:
 
 private:
     bool GetLineInfo(unsigned int row, int &start, int &height);
-    HeightToRowRangeMap  m_heightToRowRange;
+    HeightToRowRangesMap  m_heightToRowRange;
     bool m_showLogInfo; // true if changed since last logging
 };
 
@@ -3618,68 +3645,62 @@ int wxDataViewMainWindow::GetLineHeight( unsigned int row ) const
 }
 
 
-void RowRange::Add(const unsigned int idx)
+void RowRanges::Add(const unsigned int idx)
 {
-    RangeEntity *rng = NULL;
-
     size_t count = m_ranges.GetCount();
     size_t rngIdx = 0;
-    while (rngIdx < count)
+    for (rngIdx = 0; rngIdx < count; ++rngIdx)
     {
-        rng = &m_ranges[rngIdx];
+        RowRange& rng = m_ranges[rngIdx];
 
-        if (idx >= rng->from && rng->to >= idx)
+        if (idx >= rng.from && rng.to >= idx)
         {
             // index already in range
             return;
         }
 
-        if (rng->from == idx + 1)
+        if (rng.from == idx + 1)
         {
-            rng->from = idx;
+            rng.from = idx;
             CleanUp(rngIdx);
             return;
         }
-        if (rng->to == idx - 1)
+        if (rng.to == idx - 1)
         {
-            rng->to = idx;
+            rng.to = idx;
             CleanUp(rngIdx);
             return;
         }
 
-        if (rng->from > idx + 1)
+        if (rng.from > idx + 1)
         {
             break;
         }
-
-        rngIdx += 1;
     }
 //    wxLogMessage("New Range: %d" , count);
 
-    RangeEntity newRange;
+    RowRange newRange;
     newRange.from = idx;
     newRange.to = idx;
     m_ranges.Insert(newRange, rngIdx);
 }
 
-void RowRange::RemoveFrom(const unsigned int idx)
+void RowRanges::Remove(const unsigned int idx)
 {
-    RangeEntity *rng = NULL;
-
     size_t count = m_ranges.GetCount();
     size_t rngIdx = 0;
     while (rngIdx < count)
     {
-        rng = &m_ranges[rngIdx];
-        if (rng->from >= idx)
+        RowRange& rng = m_ranges[rngIdx];
+        if (rng.from >= idx)
         {
             m_ranges.RemoveAt(rngIdx);
-            count = m_ranges.GetCount();
+            count--;
             continue;
         }
-        if (rng->to >= idx)
+        if (rng.to >= idx)
         {
-            rng->to = idx - 1;
+            rng.to = idx - 1;
         }
 
         rngIdx += 1;
@@ -3687,10 +3708,9 @@ void RowRange::RemoveFrom(const unsigned int idx)
 }
 
 
-void RowRange::CleanUp(int idx)
+void RowRanges::CleanUp(int idx)
 {
-    RangeEntity *rng = NULL;
-    RangeEntity *prevRng = NULL;
+    RowRange *prevRng = NULL;
 
     size_t count = m_ranges.GetCount();
     size_t rngIdx = 0;
@@ -3700,28 +3720,27 @@ void RowRange::CleanUp(int idx)
     }
     while (rngIdx <= idx + 1 && rngIdx < count)
     {
-        rng = &m_ranges[rngIdx];
+        RowRange& rng = m_ranges[rngIdx];
 
-        if (prevRng != NULL && prevRng->to >= rng->to)
+        if (prevRng != NULL && prevRng->to >= rng.to)
         {
             m_ranges.RemoveAt(rngIdx);
-            count = m_ranges.GetCount();
+            count--;
             continue;
         }
 
-        prevRng = rng;
+        prevRng = &rng;
         rngIdx += 1;
     }
 
 }
 
-bool RowRange::Has(const unsigned int idx)
+bool RowRanges::Has(unsigned int idx) const
 {
-    RangeEntity rng;
     size_t count = m_ranges.GetCount();
     for (size_t rngIdx = 0; rngIdx < count; rngIdx++)
     {
-        rng = m_ranges[rngIdx];
+        const RowRange& rng = m_ranges[rngIdx];
         if (rng.from <= idx && idx <= rng.to)
         {
             return true;
@@ -3730,27 +3749,25 @@ bool RowRange::Has(const unsigned int idx)
     return false;
 }
 
-unsigned int RowRange::Count()
+unsigned int RowRanges::CountAll() const
 {
     unsigned int ctr = 0;
-    RangeEntity rng;
     size_t count = m_ranges.GetCount();
     for (size_t rngIdx = 0; rngIdx < count; rngIdx++)
     {
-        rng = m_ranges[rngIdx];
+        const RowRange& rng = m_ranges[rngIdx];
         ctr += (rng.to + 1) - rng.from;
     }
     return ctr;
 }
 
-unsigned int RowRange::CountTo(const unsigned int idx)
+unsigned int RowRanges::CountTo(unsigned int idx) const
 {
     unsigned int ctr = 0;
-    RangeEntity rng;
     size_t count = m_ranges.GetCount();
     for (size_t rngIdx = 0; rngIdx < count; rngIdx++)
     {
-        rng = m_ranges[rngIdx];
+        const RowRange& rng = m_ranges[rngIdx];
         if (rng.from > idx)
         {
             break;
@@ -3769,7 +3786,7 @@ unsigned int RowRange::CountTo(const unsigned int idx)
     return ctr;
 }
 
-unsigned int RowRange::GetSize() // for debugging statistics
+unsigned int RowRanges::GetSize() const // for debugging statistics
 {
     return m_ranges.size();
 }
@@ -3778,17 +3795,17 @@ bool HeightCache::GetLineInfo(unsigned int row, int &start, int &height)
 {
     int y = 0;
     bool found = false;
-    HeightToRowRangeMap::iterator it;
+    HeightToRowRangesMap::iterator it;
     for (it = m_heightToRowRange.begin(); it != m_heightToRowRange.end(); ++it)
     {
         int rowHeight = it->first;
-        RowRange* rowRange = it->second;
-        if (rowRange->Has(row))
+        RowRanges* rowRanges = it->second;
+        if (rowRanges->Has(row))
         {
             height = rowHeight;
             found = true;
         }
-        y += rowHeight * (rowRange->CountTo(row));
+        y += rowHeight * (rowRanges->CountTo(row));
     }
     if (found)
     {
@@ -3805,12 +3822,12 @@ bool HeightCache::GetLineStart(unsigned int row, int &start)
 
 bool HeightCache::GetLineHeight(unsigned int row, int &height)
 {
-    HeightToRowRangeMap::iterator it;
+    HeightToRowRangesMap::iterator it;
     for (it = m_heightToRowRange.begin(); it != m_heightToRowRange.end(); ++it)
     {
         int rowHeight = it->first;
-        RowRange* rowRange = it->second;
-        if (rowRange->Has(row))
+        RowRanges* rowRanges = it->second;
+        if (rowRanges->Has(row))
         {
             height = rowHeight;
             return true;
@@ -3822,11 +3839,11 @@ bool HeightCache::GetLineHeight(unsigned int row, int &height)
 bool HeightCache::GetLineAt(int y, unsigned int &row)
 {
     unsigned int total = 0;
-    HeightToRowRangeMap::iterator it;
+    HeightToRowRangesMap::iterator it;
     for (it = m_heightToRowRange.begin(); it != m_heightToRowRange.end(); ++it)
     {
-        RowRange* rowRange = it->second;
-        total += rowRange->Count();
+        RowRanges* rowRanges = it->second;
+        total += rowRanges->CountAll();
     }
 
     if (total == 0)
@@ -3862,33 +3879,33 @@ bool HeightCache::GetLineAt(int y, unsigned int &row)
 
 void HeightCache::Put(const unsigned int row, const int height)
 {
-    RowRange *rowRange = m_heightToRowRange[height];
-    if (rowRange == NULL)
+    RowRanges *rowRanges = m_heightToRowRange[height];
+    if (rowRanges == NULL)
     {
-        rowRange = new RowRange();
-        m_heightToRowRange[height] = rowRange;
+        rowRanges = new RowRanges();
+        m_heightToRowRange[height] = rowRanges;
     }
-    rowRange->Add(row);
+    rowRanges->Add(row);
     m_showLogInfo = true;
 }
 
 void HeightCache::Remove(const unsigned int row)
 {
-    HeightToRowRangeMap::iterator it;
+    HeightToRowRangesMap::iterator it;
     for (it = m_heightToRowRange.begin(); it != m_heightToRowRange.end(); ++it)
     {
-        RowRange* rowRange = it->second;
-        rowRange->RemoveFrom(row);
+        RowRanges* rowRanges = it->second;
+        rowRanges->Remove(row);
     }
 }
 
 void HeightCache::Clear()
 {
-    HeightToRowRangeMap::iterator it;
+    HeightToRowRangesMap::iterator it;
     for (it = m_heightToRowRange.begin(); it != m_heightToRowRange.end(); ++it)
     {
-        RowRange* rowRange = it->second;
-        delete rowRange;
+        RowRanges* rowRanges = it->second;
+        delete rowRanges;
     }
     m_heightToRowRange.clear();
     m_showLogInfo = true;
@@ -3901,16 +3918,16 @@ void HeightCache::LogSize() // for debugging statistics
         return;
     }
 
-    int rangeEntityCount = 0;
-    HeightToRowRangeMap::iterator it;
+    int rowRangeCount = 0;
+    HeightToRowRangesMap::iterator it;
     for (it = m_heightToRowRange.begin(); it != m_heightToRowRange.end(); ++it)
     {
-        RowRange* rowRange = it->second;
-        rangeEntityCount += rowRange->GetSize();
+        RowRanges* rowRanges = it->second;
+        rowRangeCount += rowRanges->GetSize();
     }
     int heights = m_heightToRowRange.size();
 
-    wxLogMessage("Cache size: HeightMap=%d; RowRanges=%d --> %d", heights, rangeEntityCount, sizeof(RangeEntity) * rangeEntityCount);
+    wxLogMessage("Cache size: HeightMap=%d; RowRanges=%d --> %d", heights, rowRangeCount, sizeof(RowRange) * rowRangeCount);
     m_showLogInfo = false;
 }
 
