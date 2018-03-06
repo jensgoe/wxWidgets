@@ -52,6 +52,7 @@ public:
 
     /**
     Returns the number of rows that are in this group before the given index.
+    not including idx.
     */
     unsigned int CountTo(unsigned int idx) const;
     unsigned int GetSize() const; // for debugging statistics

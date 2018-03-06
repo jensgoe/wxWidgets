@@ -95,6 +95,7 @@ TEST_OBJECTS =  \
 	$(OBJS)\test_iostreams.o \
 	$(OBJS)\test_largefile.o \
 	$(OBJS)\test_memstream.o \
+	$(OBJS)\test_smartrowheightcachetest.o \
 	$(OBJS)\test_socketstream.o \
 	$(OBJS)\test_sstream.o \
 	$(OBJS)\test_stdstream.o \
@@ -691,6 +692,9 @@ $(OBJS)\test_vsnprintf.o: ./strings/vsnprintf.cpp
 	$(CXX) -c -o $@ $(TEST_CXXFLAGS) $(CPPDEPS) $<
 
 $(OBJS)\test_hexconv.o: ./strings/hexconv.cpp
+	$(CXX) -c -o $@ $(TEST_CXXFLAGS) $(CPPDEPS) $<
+
+$(OBJS)\test_smartrowheightcachetest.o: ./smartrowheightcache/smartrowheightcachetest.cpp
 	$(CXX) -c -o $@ $(TEST_CXXFLAGS) $(CPPDEPS) $<
 
 $(OBJS)\test_datastreamtest.o: ./streams/datastreamtest.cpp

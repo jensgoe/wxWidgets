@@ -98,6 +98,7 @@ TEST_OBJECTS =  \
 	$(OBJS)\test_iostreams.obj \
 	$(OBJS)\test_largefile.obj \
 	$(OBJS)\test_memstream.obj \
+	$(OBJS)\test_smartrowheightcachetest.obj \
 	$(OBJS)\test_socketstream.obj \
 	$(OBJS)\test_sstream.obj \
 	$(OBJS)\test_stdstream.obj \
@@ -894,6 +895,9 @@ $(OBJS)\test_vsnprintf.obj: .\strings\vsnprintf.cpp
 
 $(OBJS)\test_hexconv.obj: .\strings\hexconv.cpp
 	$(CXX) /c /nologo /TP /Fo$@ $(TEST_CXXFLAGS) .\strings\hexconv.cpp
+
+$(OBJS)\test_smartrowheightcachetest.obj: .\smartrowheightcache\smartrowheightcachetest.cpp
+	$(CXX) /c /nologo /TP /Fo$@ $(TEST_CXXFLAGS) .\smartrowheightcache\smartrowheightcachetest.cpp
 
 $(OBJS)\test_datastreamtest.obj: .\streams\datastreamtest.cpp
 	$(CXX) /c /nologo /TP /Fo$@ $(TEST_CXXFLAGS) .\streams\datastreamtest.cpp

@@ -172,6 +172,9 @@
     <ClCompile Include="scopeguard\scopeguardtest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="smartrowheightcache\smartrowheightcachetest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="net\socket.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

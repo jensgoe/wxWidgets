@@ -511,6 +511,7 @@
     <ClCompile Include="regex\regextest.cpp" />
     <ClCompile Include="regex\wxregextest.cpp" />
     <ClCompile Include="scopeguard\scopeguardtest.cpp" />
+    <ClCompile Include="smartrowheightcache\smartrowheightcachetest.cpp" />
     <ClCompile Include="streams\datastreamtest.cpp" />
     <ClCompile Include="streams\ffilestream.cpp" />
     <ClCompile Include="streams\fileback.cpp" />
