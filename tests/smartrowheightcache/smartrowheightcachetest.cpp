@@ -74,8 +74,6 @@ void SmartRowHeightCacheTestCase::tearDown()
 // ----------------------------------------------------------------------------
 void SmartRowHeightCacheTestCase::TestRowRangesSimple()
 {
-    wxLogDebug("TestRowRangesSimple()");
-
     RowRanges *rr = new RowRanges();
 
     CPPUNIT_ASSERT_EQUAL(rr->CountAll(), 0);
@@ -117,7 +115,6 @@ void SmartRowHeightCacheTestCase::TestRowRangesSimple()
 // ----------------------------------------------------------------------------
 void SmartRowHeightCacheTestCase::TestRowRangesGapsMod2()
 {
-    wxLogDebug("TestRowRangesGapsMod2()");
     RowRanges *rr = new RowRanges();
     for (int i = 0; i < 100; i++)
     {
@@ -164,8 +161,6 @@ void SmartRowHeightCacheTestCase::TestRowRangesGapsMod2()
 // ----------------------------------------------------------------------------
 void SmartRowHeightCacheTestCase::TestHeightCache()
 {
-    wxLogDebug("TestHeightCache()");
-
     HeightCache *hc = new HeightCache();
 
     for (int i = 0; i <= 10; i++)
