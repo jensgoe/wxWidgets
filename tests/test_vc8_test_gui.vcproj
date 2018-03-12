@@ -1191,6 +1191,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\smartrowheightcache\smartrowheightcachetest.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\net\socket.cpp"
 				>
 			</File>

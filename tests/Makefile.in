@@ -114,7 +114,6 @@ TEST_OBJECTS =  \
 	test_crt.o \
 	test_vsnprintf.o \
 	test_hexconv.o \
-	test_smartrowheightcachetest.o \
 	test_datastreamtest.o \
 	test_ffilestream.o \
 	test_fileback.o \
@@ -256,6 +255,7 @@ TEST_GUI_OBJECTS =  \
 	test_gui_boxsizer.o \
 	test_gui_gridsizer.o \
 	test_gui_wrapsizer.o \
+	test_gui_smartrowheightcachetest.o \
 	test_gui_toplevel.o \
 	test_gui_valnum.o \
 	test_gui_clientsize.o \
@@ -336,15 +336,15 @@ COND_MONOLITHIC_0_USE_MEDIA_1___WXLIB_MEDIA_p = \
 COND_MONOLITHIC_0___WXLIB_XRC_p = \
 	-lwx_$(PORTNAME)$(WXUNIVNAME)$(WXUNICODEFLAG)$(WXDEBUGFLAG)$(WX_LIB_FLAVOUR)_xrc-$(WX_RELEASE)$(HOST_SUFFIX)
 @COND_MONOLITHIC_0@__WXLIB_XRC_p = $(COND_MONOLITHIC_0___WXLIB_XRC_p)
+COND_MONOLITHIC_0___WXLIB_ADV_p = \
+	-lwx_$(PORTNAME)$(WXUNIVNAME)$(WXUNICODEFLAG)$(WXDEBUGFLAG)$(WX_LIB_FLAVOUR)_adv-$(WX_RELEASE)$(HOST_SUFFIX)
+@COND_MONOLITHIC_0@__WXLIB_ADV_p = $(COND_MONOLITHIC_0___WXLIB_ADV_p)
 COND_MONOLITHIC_0___WXLIB_HTML_p = \
 	-lwx_$(PORTNAME)$(WXUNIVNAME)$(WXUNICODEFLAG)$(WXDEBUGFLAG)$(WX_LIB_FLAVOUR)_html-$(WX_RELEASE)$(HOST_SUFFIX)
 @COND_MONOLITHIC_0@__WXLIB_HTML_p = $(COND_MONOLITHIC_0___WXLIB_HTML_p)
 COND_MONOLITHIC_0___WXLIB_XML_p = \
 	-lwx_base$(WXBASEPORT)$(WXUNICODEFLAG)$(WXDEBUGFLAG)$(WX_LIB_FLAVOUR)_xml-$(WX_RELEASE)$(HOST_SUFFIX)
 @COND_MONOLITHIC_0@__WXLIB_XML_p = $(COND_MONOLITHIC_0___WXLIB_XML_p)
-COND_MONOLITHIC_0___WXLIB_ADV_p = \
-	-lwx_$(PORTNAME)$(WXUNIVNAME)$(WXUNICODEFLAG)$(WXDEBUGFLAG)$(WX_LIB_FLAVOUR)_adv-$(WX_RELEASE)$(HOST_SUFFIX)
-@COND_MONOLITHIC_0@__WXLIB_ADV_p = $(COND_MONOLITHIC_0___WXLIB_ADV_p)
 COND_MONOLITHIC_0___WXLIB_NET_p = \
 	-lwx_base$(WXBASEPORT)$(WXUNICODEFLAG)$(WXDEBUGFLAG)$(WX_LIB_FLAVOUR)_net-$(WX_RELEASE)$(HOST_SUFFIX)
 @COND_MONOLITHIC_0@__WXLIB_NET_p = $(COND_MONOLITHIC_0___WXLIB_NET_p)
@@ -406,7 +406,7 @@ distclean: clean
 	rm -f config.cache config.log config.status bk-deps bk-make-pch shared-ld-sh Makefile
 
 test$(EXEEXT): $(TEST_OBJECTS)
-	$(CXX) -o $@ $(TEST_OBJECTS)    -L$(LIBDIRNAME)  $(SAMPLES_RPATH_FLAG) $(LDFLAGS)  $(__WXLIB_NET_p)  $(__WXLIB_XML_p) $(EXTRALIBS_XML) $(__WXLIB_BASE_p)  $(__WXLIB_ADV_p) $(PLUGIN_ADV_EXTRALIBS) $(__WXLIB_MONO_p) $(__LIB_PNG_IF_MONO_p) $(__LIB_ZLIB_p) $(__LIB_REGEX_p) $(__LIB_EXPAT_p) $(EXTRALIBS_FOR_BASE) $(LIBS)
+	$(CXX) -o $@ $(TEST_OBJECTS)    -L$(LIBDIRNAME)  $(SAMPLES_RPATH_FLAG) $(LDFLAGS)  $(__WXLIB_NET_p)  $(__WXLIB_XML_p) $(EXTRALIBS_XML) $(__WXLIB_BASE_p)  $(__WXLIB_MONO_p) $(__LIB_PNG_IF_MONO_p) $(__LIB_ZLIB_p) $(__LIB_REGEX_p) $(__LIB_EXPAT_p) $(EXTRALIBS_FOR_BASE) $(LIBS)
 
 @COND_USE_PCH_1@./.pch/testprec_test/testprec.h.gch: 
 @COND_USE_PCH_1@	$(BK_MAKE_PCH) ./.pch/testprec_test/testprec.h.gch testprec.h $(CXX) $(TEST_CXXFLAGS)
@@ -669,9 +669,6 @@ test_vsnprintf.o: $(srcdir)/strings/vsnprintf.cpp $(TEST_ODEP)
 
 test_hexconv.o: $(srcdir)/strings/hexconv.cpp $(TEST_ODEP)
 	$(CXXC) -c -o $@ $(TEST_CXXFLAGS) $(srcdir)/strings/hexconv.cpp
-
-test_smartrowheightcachetest.o: $(srcdir)/smartrowheightcache/smartrowheightcachetest.cpp $(TEST_ODEP)
-	$(CXXC) -c -o $@ $(TEST_CXXFLAGS) $(srcdir)/smartrowheightcache/smartrowheightcachetest.cpp
 
 test_datastreamtest.o: $(srcdir)/streams/datastreamtest.cpp $(TEST_ODEP)
 	$(CXXC) -c -o $@ $(TEST_CXXFLAGS) $(srcdir)/streams/datastreamtest.cpp
@@ -1035,6 +1032,9 @@ test_gui_gridsizer.o: $(srcdir)/sizers/gridsizer.cpp $(TEST_GUI_ODEP)
 
 test_gui_wrapsizer.o: $(srcdir)/sizers/wrapsizer.cpp $(TEST_GUI_ODEP)
 	$(CXXC) -c -o $@ $(TEST_GUI_CXXFLAGS) $(srcdir)/sizers/wrapsizer.cpp
+
+test_gui_smartrowheightcachetest.o: $(srcdir)/smartrowheightcache/smartrowheightcachetest.cpp $(TEST_GUI_ODEP)
+	$(CXXC) -c -o $@ $(TEST_GUI_CXXFLAGS) $(srcdir)/smartrowheightcache/smartrowheightcachetest.cpp
 
 test_gui_toplevel.o: $(srcdir)/toplevel/toplevel.cpp $(TEST_GUI_ODEP)
 	$(CXXC) -c -o $@ $(TEST_GUI_CXXFLAGS) $(srcdir)/toplevel/toplevel.cpp

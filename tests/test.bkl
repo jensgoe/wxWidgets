@@ -84,7 +84,6 @@
             strings/crt.cpp
             strings/vsnprintf.cpp
             strings/hexconv.cpp
-            smartrowheightcache/smartrowheightcachetest.cpp
             streams/datastreamtest.cpp
             streams/ffilestream.cpp
             streams/fileback.cpp
@@ -115,7 +114,6 @@
         <wx-lib>net</wx-lib>
         <wx-lib>xml</wx-lib>
         <wx-lib>base</wx-lib>
-        <wx-lib>adv</wx-lib>
     </exe>
 
     <!--
@@ -268,6 +266,7 @@
             sizers/boxsizer.cpp
             sizers/gridsizer.cpp
             sizers/wrapsizer.cpp
+            smartrowheightcache/smartrowheightcachetest.cpp
             toplevel/toplevel.cpp
             validators/valnum.cpp
             window/clientsize.cpp

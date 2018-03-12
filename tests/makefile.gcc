@@ -88,7 +88,6 @@ TEST_OBJECTS =  \
 	$(OBJS)\test_crt.o \
 	$(OBJS)\test_vsnprintf.o \
 	$(OBJS)\test_hexconv.o \
-	$(OBJS)\test_smartrowheightcachetest.o \
 	$(OBJS)\test_datastreamtest.o \
 	$(OBJS)\test_ffilestream.o \
 	$(OBJS)\test_fileback.o \
@@ -237,6 +236,7 @@ TEST_GUI_OBJECTS =  \
 	$(OBJS)\test_gui_boxsizer.o \
 	$(OBJS)\test_gui_gridsizer.o \
 	$(OBJS)\test_gui_wrapsizer.o \
+	$(OBJS)\test_gui_smartrowheightcachetest.o \
 	$(OBJS)\test_gui_toplevel.o \
 	$(OBJS)\test_gui_valnum.o \
 	$(OBJS)\test_gui_clientsize.o \
@@ -346,16 +346,16 @@ __WXLIB_XRC_p = \
 	-lwx$(PORTNAME)$(WXUNIVNAME)$(WX_RELEASE_NODOT)$(WXUNICODEFLAG)$(WXDEBUGFLAG)$(WX_LIB_FLAVOUR)_xrc
 endif
 ifeq ($(MONOLITHIC),0)
+__WXLIB_ADV_p = \
+	-lwx$(PORTNAME)$(WXUNIVNAME)$(WX_RELEASE_NODOT)$(WXUNICODEFLAG)$(WXDEBUGFLAG)$(WX_LIB_FLAVOUR)_adv
+endif
+ifeq ($(MONOLITHIC),0)
 __WXLIB_HTML_p = \
 	-lwx$(PORTNAME)$(WXUNIVNAME)$(WX_RELEASE_NODOT)$(WXUNICODEFLAG)$(WXDEBUGFLAG)$(WX_LIB_FLAVOUR)_html
 endif
 ifeq ($(MONOLITHIC),0)
 __WXLIB_XML_p = \
 	-lwxbase$(WX_RELEASE_NODOT)$(WXUNICODEFLAG)$(WXDEBUGFLAG)$(WX_LIB_FLAVOUR)_xml
-endif
-ifeq ($(MONOLITHIC),0)
-__WXLIB_ADV_p = \
-	-lwx$(PORTNAME)$(WXUNIVNAME)$(WX_RELEASE_NODOT)$(WXUNICODEFLAG)$(WXDEBUGFLAG)$(WX_LIB_FLAVOUR)_adv
 endif
 ifeq ($(MONOLITHIC),0)
 __WXLIB_NET_p = \
@@ -482,7 +482,7 @@ clean:
 	-if exist $(OBJS)\test_gui.exe del $(OBJS)\test_gui.exe
 
 $(OBJS)\test.exe: $(TEST_OBJECTS)
-	$(CXX) -o $@ $(TEST_OBJECTS)  $(__DEBUGINFO) $(__THREADSFLAG) -L$(LIBDIRNAME)  $(____CAIRO_LIBDIR_FILENAMES) $(LDFLAGS)  $(__WXLIB_NET_p)  $(__WXLIB_XML_p)  $(__WXLIB_BASE_p)  $(__WXLIB_ADV_p)  $(__WXLIB_MONO_p) $(__LIB_PNG_IF_MONO_p) -lwxzlib$(WXDEBUGFLAG) -lwxregex$(WXUNICODEFLAG)$(WXDEBUGFLAG) -lwxexpat$(WXDEBUGFLAG) $(EXTRALIBS_FOR_BASE) $(__CAIRO_LIB_p) -lkernel32 -luser32 -lgdi32 -lcomdlg32 -lwinspool -lwinmm -lshell32 -lshlwapi -lcomctl32 -lole32 -loleaut32 -luuid -lrpcrt4 -ladvapi32 -lversion -lwsock32 -lwininet -loleacc -luxtheme
+	$(CXX) -o $@ $(TEST_OBJECTS)  $(__DEBUGINFO) $(__THREADSFLAG) -L$(LIBDIRNAME)  $(____CAIRO_LIBDIR_FILENAMES) $(LDFLAGS)  $(__WXLIB_NET_p)  $(__WXLIB_XML_p)  $(__WXLIB_BASE_p)  $(__WXLIB_MONO_p) $(__LIB_PNG_IF_MONO_p) -lwxzlib$(WXDEBUGFLAG) -lwxregex$(WXUNICODEFLAG)$(WXDEBUGFLAG) -lwxexpat$(WXDEBUGFLAG) $(EXTRALIBS_FOR_BASE) $(__CAIRO_LIB_p) -lkernel32 -luser32 -lgdi32 -lcomdlg32 -lwinspool -lwinmm -lshell32 -lshlwapi -lcomctl32 -lole32 -loleaut32 -luuid -lrpcrt4 -ladvapi32 -lversion -lwsock32 -lwininet -loleacc -luxtheme
 
 ifeq ($(USE_GUI),1)
 $(OBJS)\test_drawing.exe: $(TEST_DRAWING_OBJECTS)
@@ -692,9 +692,6 @@ $(OBJS)\test_vsnprintf.o: ./strings/vsnprintf.cpp
 	$(CXX) -c -o $@ $(TEST_CXXFLAGS) $(CPPDEPS) $<
 
 $(OBJS)\test_hexconv.o: ./strings/hexconv.cpp
-	$(CXX) -c -o $@ $(TEST_CXXFLAGS) $(CPPDEPS) $<
-
-$(OBJS)\test_smartrowheightcachetest.o: ./smartrowheightcache/smartrowheightcachetest.cpp
 	$(CXX) -c -o $@ $(TEST_CXXFLAGS) $(CPPDEPS) $<
 
 $(OBJS)\test_datastreamtest.o: ./streams/datastreamtest.cpp
@@ -1064,6 +1061,9 @@ $(OBJS)\test_gui_gridsizer.o: ./sizers/gridsizer.cpp
 	$(CXX) -c -o $@ $(TEST_GUI_CXXFLAGS) $(CPPDEPS) $<
 
 $(OBJS)\test_gui_wrapsizer.o: ./sizers/wrapsizer.cpp
+	$(CXX) -c -o $@ $(TEST_GUI_CXXFLAGS) $(CPPDEPS) $<
+
+$(OBJS)\test_gui_smartrowheightcachetest.o: ./smartrowheightcache/smartrowheightcachetest.cpp
 	$(CXX) -c -o $@ $(TEST_GUI_CXXFLAGS) $(CPPDEPS) $<
 
 $(OBJS)\test_gui_toplevel.o: ./toplevel/toplevel.cpp
