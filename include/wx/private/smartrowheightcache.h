@@ -10,6 +10,8 @@
 #ifndef _WX_PRIVATE_SMARTROWHEIGHTCACHE_H_
 #define _WX_PRIVATE_SMARTROWHEIGHTCACHE_H_
 
+#include "wx/dynarray.h"
+#include "wx/hashmap.h"
 
 // struct describing a range of rows which contains rows <from> .. <to> # TODO: to-1
 struct RowRange

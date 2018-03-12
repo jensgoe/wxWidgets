@@ -52,7 +52,6 @@
 #include "wx/selstore.h"
 #include "wx/stopwatch.h"
 #include "wx/weakref.h"
-#include "wx/hashmap.h"
 #include "wx/vector.h"
 #include "wx/generic/private/markuptext.h"
 #include "wx/generic/private/widthcalc.h"
