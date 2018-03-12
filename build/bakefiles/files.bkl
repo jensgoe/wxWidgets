@@ -511,7 +511,6 @@ IMPORTANT: please read docs/tech/tn0016.txt before modifying this file!
     src/common/process.cpp
     src/common/regex.cpp
     src/common/stdpbase.cpp
-    src/common/smartrowheightcache.cpp
     src/common/sstream.cpp
     src/common/stdstream.cpp
     src/common/stopwatch.cpp
@@ -2686,6 +2685,7 @@ IMPORTANT: please read docs/tech/tn0016.txt before modifying this file!
     src/generic/wizard.cpp
     src/common/addremovectrl.cpp
     src/common/notifmsgcmn.cpp
+    src/common/smartrowheightcache.cpp
 </set>
 
 <set var="ADVANCED_CMN_HDR" hints="files">

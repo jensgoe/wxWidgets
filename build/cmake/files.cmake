@@ -424,7 +424,6 @@ set(BASE_CMN_SRC
     src/common/regex.cpp
     src/common/secretstore.cpp
     src/common/stdpbase.cpp
-    src/common/smartrowheightcache.cpp
     src/common/sstream.cpp
     src/common/stdstream.cpp
     src/common/stopwatch.cpp
@@ -2524,6 +2523,7 @@ set(ADVANCED_CMN_SRC
     src/generic/tipdlg.cpp
     src/generic/treelist.cpp
     src/generic/wizard.cpp
+    src/common/smartrowheightcache.cpp
 )
 
 set(ADVANCED_CMN_HDR

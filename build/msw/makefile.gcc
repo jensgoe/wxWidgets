@@ -408,7 +408,6 @@ MONODLL_OBJECTS =  \
 	$(OBJS)\monodll_process.o \
 	$(OBJS)\monodll_regex.o \
 	$(OBJS)\monodll_stdpbase.o \
-	$(OBJS)\monodll_smartrowheightcache.o \
 	$(OBJS)\monodll_sstream.o \
 	$(OBJS)\monodll_stdstream.o \
 	$(OBJS)\monodll_stopwatch.o \
@@ -562,7 +561,6 @@ MONOLIB_OBJECTS =  \
 	$(OBJS)\monolib_process.o \
 	$(OBJS)\monolib_regex.o \
 	$(OBJS)\monolib_stdpbase.o \
-	$(OBJS)\monolib_smartrowheightcache.o \
 	$(OBJS)\monolib_sstream.o \
 	$(OBJS)\monolib_stdstream.o \
 	$(OBJS)\monolib_stopwatch.o \
@@ -712,7 +710,6 @@ BASEDLL_OBJECTS =  \
 	$(OBJS)\basedll_process.o \
 	$(OBJS)\basedll_regex.o \
 	$(OBJS)\basedll_stdpbase.o \
-	$(OBJS)\basedll_smartrowheightcache.o \
 	$(OBJS)\basedll_sstream.o \
 	$(OBJS)\basedll_stdstream.o \
 	$(OBJS)\basedll_stopwatch.o \
@@ -846,7 +843,6 @@ BASELIB_OBJECTS =  \
 	$(OBJS)\baselib_process.o \
 	$(OBJS)\baselib_regex.o \
 	$(OBJS)\baselib_stdpbase.o \
-	$(OBJS)\baselib_smartrowheightcache.o \
 	$(OBJS)\baselib_sstream.o \
 	$(OBJS)\baselib_stdstream.o \
 	$(OBJS)\baselib_stopwatch.o \
@@ -2427,6 +2423,7 @@ ____ADVANCED_SRC_FILENAMES_OBJECTS =  \
 	$(OBJS)\monodll_wizard.o \
 	$(OBJS)\monodll_addremovectrl.o \
 	$(OBJS)\monodll_notifmsgcmn.o \
+	$(OBJS)\monodll_smartrowheightcache.o \
 	$(OBJS)\monodll_taskbarcmn.o \
 	$(OBJS)\monodll_aboutdlg.o \
 	$(OBJS)\monodll_notifmsg.o \
@@ -2483,6 +2480,7 @@ ____ADVANCED_SRC_FILENAMES_OBJECTS =  \
 	$(OBJS)\monodll_wizard.o \
 	$(OBJS)\monodll_addremovectrl.o \
 	$(OBJS)\monodll_notifmsgcmn.o \
+	$(OBJS)\monodll_smartrowheightcache.o \
 	$(OBJS)\monodll_taskbarcmn.o \
 	$(OBJS)\monodll_aboutdlg.o \
 	$(OBJS)\monodll_notifmsg.o \
@@ -3270,6 +3268,7 @@ ____ADVANCED_SRC_FILENAMES_1_OBJECTS =  \
 	$(OBJS)\monolib_wizard.o \
 	$(OBJS)\monolib_addremovectrl.o \
 	$(OBJS)\monolib_notifmsgcmn.o \
+	$(OBJS)\monolib_smartrowheightcache.o \
 	$(OBJS)\monolib_taskbarcmn.o \
 	$(OBJS)\monolib_aboutdlg.o \
 	$(OBJS)\monolib_notifmsg.o \
@@ -3326,6 +3325,7 @@ ____ADVANCED_SRC_FILENAMES_1_OBJECTS =  \
 	$(OBJS)\monolib_wizard.o \
 	$(OBJS)\monolib_addremovectrl.o \
 	$(OBJS)\monolib_notifmsgcmn.o \
+	$(OBJS)\monolib_smartrowheightcache.o \
 	$(OBJS)\monolib_taskbarcmn.o \
 	$(OBJS)\monolib_aboutdlg.o \
 	$(OBJS)\monolib_notifmsg.o \
@@ -4592,6 +4592,7 @@ ____ADVANCED_SRC_FILENAMES_2_OBJECTS =  \
 	$(OBJS)\advdll_wizard.o \
 	$(OBJS)\advdll_addremovectrl.o \
 	$(OBJS)\advdll_notifmsgcmn.o \
+	$(OBJS)\advdll_smartrowheightcache.o \
 	$(OBJS)\advdll_taskbarcmn.o \
 	$(OBJS)\advdll_aboutdlg.o \
 	$(OBJS)\advdll_notifmsg.o \
@@ -4648,6 +4649,7 @@ ____ADVANCED_SRC_FILENAMES_2_OBJECTS =  \
 	$(OBJS)\advdll_wizard.o \
 	$(OBJS)\advdll_addremovectrl.o \
 	$(OBJS)\advdll_notifmsgcmn.o \
+	$(OBJS)\advdll_smartrowheightcache.o \
 	$(OBJS)\advdll_taskbarcmn.o \
 	$(OBJS)\advdll_aboutdlg.o \
 	$(OBJS)\advdll_notifmsg.o \
@@ -4704,6 +4706,7 @@ ____ADVANCED_SRC_FILENAMES_3_OBJECTS =  \
 	$(OBJS)\advlib_wizard.o \
 	$(OBJS)\advlib_addremovectrl.o \
 	$(OBJS)\advlib_notifmsgcmn.o \
+	$(OBJS)\advlib_smartrowheightcache.o \
 	$(OBJS)\advlib_taskbarcmn.o \
 	$(OBJS)\advlib_aboutdlg.o \
 	$(OBJS)\advlib_notifmsg.o \
@@ -4760,6 +4763,7 @@ ____ADVANCED_SRC_FILENAMES_3_OBJECTS =  \
 	$(OBJS)\advlib_wizard.o \
 	$(OBJS)\advlib_addremovectrl.o \
 	$(OBJS)\advlib_notifmsgcmn.o \
+	$(OBJS)\advlib_smartrowheightcache.o \
 	$(OBJS)\advlib_taskbarcmn.o \
 	$(OBJS)\advlib_aboutdlg.o \
 	$(OBJS)\advlib_notifmsg.o \
@@ -6769,9 +6773,6 @@ $(OBJS)\monodll_regex.o: ../../src/common/regex.cpp
 	$(CXX) -c -o $@ $(MONODLL_CXXFLAGS) $(CPPDEPS) $<
 
 $(OBJS)\monodll_stdpbase.o: ../../src/common/stdpbase.cpp
-	$(CXX) -c -o $@ $(MONODLL_CXXFLAGS) $(CPPDEPS) $<
-
-$(OBJS)\monodll_smartrowheightcache.o: ../../src/common/smartrowheightcache.cpp
 	$(CXX) -c -o $@ $(MONODLL_CXXFLAGS) $(CPPDEPS) $<
 
 $(OBJS)\monodll_sstream.o: ../../src/common/sstream.cpp
@@ -9113,6 +9114,11 @@ $(OBJS)\monodll_notifmsgcmn.o: ../../src/common/notifmsgcmn.cpp
 endif
 
 ifeq ($(USE_GUI),1)
+$(OBJS)\monodll_smartrowheightcache.o: ../../src/common/smartrowheightcache.cpp
+	$(CXX) -c -o $@ $(MONODLL_CXXFLAGS) $(CPPDEPS) $<
+endif
+
+ifeq ($(USE_GUI),1)
 $(OBJS)\monodll_taskbarcmn.o: ../../src/common/taskbarcmn.cpp
 	$(CXX) -c -o $@ $(MONODLL_CXXFLAGS) $(CPPDEPS) $<
 endif
@@ -9320,9 +9326,6 @@ $(OBJS)\monolib_regex.o: ../../src/common/regex.cpp
 	$(CXX) -c -o $@ $(MONOLIB_CXXFLAGS) $(CPPDEPS) $<
 
 $(OBJS)\monolib_stdpbase.o: ../../src/common/stdpbase.cpp
-	$(CXX) -c -o $@ $(MONOLIB_CXXFLAGS) $(CPPDEPS) $<
-
-$(OBJS)\monolib_smartrowheightcache.o: ../../src/common/smartrowheightcache.cpp
 	$(CXX) -c -o $@ $(MONOLIB_CXXFLAGS) $(CPPDEPS) $<
 
 $(OBJS)\monolib_sstream.o: ../../src/common/sstream.cpp
@@ -11664,6 +11667,11 @@ $(OBJS)\monolib_notifmsgcmn.o: ../../src/common/notifmsgcmn.cpp
 endif
 
 ifeq ($(USE_GUI),1)
+$(OBJS)\monolib_smartrowheightcache.o: ../../src/common/smartrowheightcache.cpp
+	$(CXX) -c -o $@ $(MONOLIB_CXXFLAGS) $(CPPDEPS) $<
+endif
+
+ifeq ($(USE_GUI),1)
 $(OBJS)\monolib_taskbarcmn.o: ../../src/common/taskbarcmn.cpp
 	$(CXX) -c -o $@ $(MONOLIB_CXXFLAGS) $(CPPDEPS) $<
 endif
@@ -11871,9 +11879,6 @@ $(OBJS)\basedll_regex.o: ../../src/common/regex.cpp
 	$(CXX) -c -o $@ $(BASEDLL_CXXFLAGS) $(CPPDEPS) $<
 
 $(OBJS)\basedll_stdpbase.o: ../../src/common/stdpbase.cpp
-	$(CXX) -c -o $@ $(BASEDLL_CXXFLAGS) $(CPPDEPS) $<
-
-$(OBJS)\basedll_smartrowheightcache.o: ../../src/common/smartrowheightcache.cpp
 	$(CXX) -c -o $@ $(BASEDLL_CXXFLAGS) $(CPPDEPS) $<
 
 $(OBJS)\basedll_sstream.o: ../../src/common/sstream.cpp
@@ -12219,9 +12224,6 @@ $(OBJS)\baselib_regex.o: ../../src/common/regex.cpp
 	$(CXX) -c -o $@ $(BASELIB_CXXFLAGS) $(CPPDEPS) $<
 
 $(OBJS)\baselib_stdpbase.o: ../../src/common/stdpbase.cpp
-	$(CXX) -c -o $@ $(BASELIB_CXXFLAGS) $(CPPDEPS) $<
-
-$(OBJS)\baselib_smartrowheightcache.o: ../../src/common/smartrowheightcache.cpp
 	$(CXX) -c -o $@ $(BASELIB_CXXFLAGS) $(CPPDEPS) $<
 
 $(OBJS)\baselib_sstream.o: ../../src/common/sstream.cpp
@@ -15590,6 +15592,9 @@ $(OBJS)\advdll_addremovectrl.o: ../../src/common/addremovectrl.cpp
 $(OBJS)\advdll_notifmsgcmn.o: ../../src/common/notifmsgcmn.cpp
 	$(CXX) -c -o $@ $(ADVDLL_CXXFLAGS) $(CPPDEPS) $<
 
+$(OBJS)\advdll_smartrowheightcache.o: ../../src/common/smartrowheightcache.cpp
+	$(CXX) -c -o $@ $(ADVDLL_CXXFLAGS) $(CPPDEPS) $<
+
 $(OBJS)\advdll_taskbarcmn.o: ../../src/common/taskbarcmn.cpp
 	$(CXX) -c -o $@ $(ADVDLL_CXXFLAGS) $(CPPDEPS) $<
 
@@ -15750,6 +15755,9 @@ $(OBJS)\advlib_addremovectrl.o: ../../src/common/addremovectrl.cpp
 	$(CXX) -c -o $@ $(ADVLIB_CXXFLAGS) $(CPPDEPS) $<
 
 $(OBJS)\advlib_notifmsgcmn.o: ../../src/common/notifmsgcmn.cpp
+	$(CXX) -c -o $@ $(ADVLIB_CXXFLAGS) $(CPPDEPS) $<
+
+$(OBJS)\advlib_smartrowheightcache.o: ../../src/common/smartrowheightcache.cpp
 	$(CXX) -c -o $@ $(ADVLIB_CXXFLAGS) $(CPPDEPS) $<
 
 $(OBJS)\advlib_taskbarcmn.o: ../../src/common/taskbarcmn.cpp

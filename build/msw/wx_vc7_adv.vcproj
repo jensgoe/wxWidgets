@@ -334,6 +334,9 @@
 				RelativePath="..\..\src\common\richtooltipcmn.cpp">
 			</File>
 			<File
+				RelativePath="..\..\src\common\smartrowheightcache.cpp">
+			</File>
+			<File
 				RelativePath="..\..\src\common\taskbarcmn.cpp">
 			</File>
 		</Filter>

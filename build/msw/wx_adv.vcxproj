@@ -509,6 +509,7 @@
     <ClCompile Include="..\..\src\common\addremovectrl.cpp" />
     <ClCompile Include="..\..\src\generic\activityindicator.cpp" />
     <ClCompile Include="..\..\src\msw\rt\notifmsgrt.cpp" />
+    <ClCompile Include="..\..\src\common\smartrowheightcache.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\src\msw\version.rc">

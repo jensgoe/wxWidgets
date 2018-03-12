@@ -91,6 +91,7 @@ TEST_OBJECTS =  \
 	$(OBJS)\test_crt.obj \
 	$(OBJS)\test_vsnprintf.obj \
 	$(OBJS)\test_hexconv.obj \
+	$(OBJS)\test_smartrowheightcachetest.obj \
 	$(OBJS)\test_datastreamtest.obj \
 	$(OBJS)\test_ffilestream.obj \
 	$(OBJS)\test_fileback.obj \
@@ -98,7 +99,6 @@ TEST_OBJECTS =  \
 	$(OBJS)\test_iostreams.obj \
 	$(OBJS)\test_largefile.obj \
 	$(OBJS)\test_memstream.obj \
-	$(OBJS)\test_smartrowheightcachetest.obj \
 	$(OBJS)\test_socketstream.obj \
 	$(OBJS)\test_sstream.obj \
 	$(OBJS)\test_stdstream.obj \

@@ -57,6 +57,9 @@
     <ClCompile Include="..\..\src\common\richtooltipcmn.cpp">
       <Filter>Common Sources</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\common\smartrowheightcache.cpp">
+      <Filter>Common Sources</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\common\taskbarcmn.cpp">
       <Filter>Common Sources</Filter>
     </ClCompile>
