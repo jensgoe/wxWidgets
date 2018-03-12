@@ -23,6 +23,7 @@
 #endif
 
 #ifndef WX_PRECOMP
+    #include "wx/log.h"
 #endif // WX_PRECOMP
 
 #include "wx/private/smartrowheightcache.h"
