@@ -2740,6 +2740,7 @@ IMPORTANT: please read docs/tech/tn0016.txt before modifying this file!
     wx/wizard.h
     wx/addremovectrl.h
     wx/activityindicator.h
+    wx/private/smartrowheightcache.h
 </set>
 
 <set var="ADVANCED_MSW_SRC" hints="files">

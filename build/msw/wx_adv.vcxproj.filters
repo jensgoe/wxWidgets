@@ -355,6 +355,9 @@
     <ClInclude Include="..\..\include\wx\odcombo.h">
       <Filter>Common Headers</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\wx\private\smartrowheightcache.h">
+      <Filter>Common Headers</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\include\wx\propdlg.h">
       <Filter>Common Headers</Filter>
     </ClInclude>

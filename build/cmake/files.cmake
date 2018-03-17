@@ -2578,6 +2578,7 @@ set(ADVANCED_CMN_HDR
     wx/tipdlg.h
     wx/treelist.h
     wx/wizard.h
+    wx/private/smartrowheightcache.h
 )
 
 set(ADVANCED_MSW_SRC

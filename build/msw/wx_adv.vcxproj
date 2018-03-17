@@ -603,6 +603,7 @@
     <ClInclude Include="..\..\include\wx\addremovectrl.h" />
     <ClInclude Include="..\..\include\wx\activityindicator.h" />
     <ClInclude Include="..\..\include\wx\generic\activityindicator.h" />
+    <ClInclude Include="..\..\include\wx\private\smartrowheightcache.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

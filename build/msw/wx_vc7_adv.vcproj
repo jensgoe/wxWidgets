@@ -752,6 +752,9 @@
 				RelativePath="..\..\include\wx\sashwin.h">
 			</File>
 			<File
+				RelativePath="..\..\include\wx\private\smartrowheightcache.h">
+			</File>
+			<File
 				RelativePath="..\..\include\wx\sound.h">
 			</File>
 			<File

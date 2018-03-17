@@ -2545,6 +2545,7 @@ ADVANCED_CMN_HDR =
     wx/laywin.h
     wx/notifmsg.h
     wx/odcombo.h
+    wx/private/smartrowheightcache.h
     wx/propdlg.h
     wx/richtooltip.h
     wx/sashwin.h

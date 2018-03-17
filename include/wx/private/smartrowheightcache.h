@@ -28,7 +28,7 @@ A helper class that manages a set of RowRange objects.
 It stores the indices that are members of a group in a memory
 efficiant way.
 */
-class RowRanges
+class WXDLLIMPEXP_ADV RowRanges
 {
 public:
     /**
@@ -114,7 +114,7 @@ Look into each key and count all rows.
 Use bisect algorithm in combination with GetLineStart() to
 find the appropriate item
 */
-class HeightCache
+class WXDLLIMPEXP_ADV HeightCache
 {
 public:
     bool GetLineStart(unsigned int row, int &start);
