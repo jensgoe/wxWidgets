@@ -44,7 +44,7 @@ WX_DEFINE_OBJARRAY(ArrayOfRowRange)
 // RowRanges
 // ----------------------------------------------------------------------------
 
-void RowRanges::Add(const unsigned int idx)
+void RowRanges::Add(const unsigned int row)
 {
     size_t count = m_ranges.GetCount();
     size_t rngIdx = 0;
@@ -52,54 +52,59 @@ void RowRanges::Add(const unsigned int idx)
     {
         RowRange& rng = m_ranges[rngIdx];
 
-        if (idx >= rng.from && rng.to >= idx)
+        if (row >= rng.from && rng.to > row)
         {
             // index already in range
             return;
         }
 
-        if (rng.from == idx + 1)
+        if (row == rng.from - 1)
         {
-            rng.from = idx;
+            // extend range at the beginning (to the left)
+            rng.from = row;
             CleanUp(rngIdx);
             return;
         }
-        if (rng.to == idx - 1)
+        if (row == rng.to)
         {
-            rng.to = idx;
+            // extend range at the end (set to row+1 because 'to' is not including)
+            rng.to = row + 1;
             CleanUp(rngIdx);
             return;
         }
 
-        if (rng.from > idx + 1)
+        if (rng.from > row + 1)
         {
+            // this range is already behind row index, so break here and insert a new range below
             break;
         }
     }
     //    wxLogMessage("New Range: %d" , count);
 
     RowRange newRange;
-    newRange.from = idx;
-    newRange.to = idx;
+    newRange.from = row;
+    newRange.to = row + 1;
     m_ranges.Insert(newRange, rngIdx);
 }
 
-void RowRanges::Remove(const unsigned int idx)
+void RowRanges::Remove(const unsigned int row)
 {
     size_t count = m_ranges.GetCount();
     size_t rngIdx = 0;
     while (rngIdx < count)
     {
         RowRange& rng = m_ranges[rngIdx];
-        if (rng.from >= idx)
+        if (rng.from >= row)
         {
+            // this range starts behind row index, so remove it
             m_ranges.RemoveAt(rngIdx);
             count--;
             continue;
         }
-        if (rng.to >= idx)
+        if (rng.to > row)
         {
-            rng.to = idx - 1;
+            // this ranges includes row, so cut off at row index to exclude row
+            rng.to = row;
         }
 
         rngIdx += 1;
@@ -109,19 +114,24 @@ void RowRanges::Remove(const unsigned int idx)
 
 void RowRanges::CleanUp(int idx)
 {
-    RowRange *prevRng = NULL;
-
     size_t count = m_ranges.GetCount();
     size_t rngIdx = 0;
-    if (idx > 0)
+    if (idx > 0 && idx < count)
     {
+        // start one RowRange before
         rngIdx = idx - 1;
     }
+    else
+    {
+        return;
+    }
+    RowRange *prevRng = &m_ranges[rngIdx];
+    rngIdx++;
     while (rngIdx <= idx + 1 && rngIdx < count)
     {
         RowRange& rng = m_ranges[rngIdx];
 
-        if (prevRng != NULL && prevRng->to >= rng.to)
+        if (prevRng->to >= rng.to)
         {
             m_ranges.RemoveAt(rngIdx);
             count--;
@@ -131,16 +141,15 @@ void RowRanges::CleanUp(int idx)
         prevRng = &rng;
         rngIdx += 1;
     }
-
 }
 
-bool RowRanges::Has(unsigned int idx) const
+bool RowRanges::Has(unsigned int row) const
 {
     size_t count = m_ranges.GetCount();
     for (size_t rngIdx = 0; rngIdx < count; rngIdx++)
     {
         const RowRange& rng = m_ranges[rngIdx];
-        if (rng.from <= idx && idx <= rng.to)
+        if (rng.from <= row && row < rng.to)
         {
             return true;
         }
@@ -155,30 +164,29 @@ unsigned int RowRanges::CountAll() const
     for (size_t rngIdx = 0; rngIdx < count; rngIdx++)
     {
         const RowRange& rng = m_ranges[rngIdx];
-        ctr += (rng.to + 1) - rng.from;
+        ctr += rng.to - rng.from;
     }
     return ctr;
 }
 
-unsigned int RowRanges::CountTo(unsigned int idx) const
+unsigned int RowRanges::CountTo(unsigned int row) const
 {
     unsigned int ctr = 0;
     size_t count = m_ranges.GetCount();
     for (size_t rngIdx = 0; rngIdx < count; rngIdx++)
     {
         const RowRange& rng = m_ranges[rngIdx];
-        if (rng.from > idx)
+        if (rng.from > row)
         {
             break;
         }
-        else if (rng.to < idx)
+        else if (rng.to < row)
         {
             ctr += rng.to - rng.from;
-            ctr += 1;
         }
         else
         {
-            ctr += idx - rng.from;
+            ctr += row - rng.from;
             break;
         }
     }

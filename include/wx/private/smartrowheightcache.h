@@ -35,17 +35,17 @@ public:
     Adds a row index to this group by adding it to an existing RowRange
     or by creating a new one.
     */
-    void Add(const unsigned int idx);
+    void Add(const unsigned int row);
 
     /**
     Removes a row index and all indices after idx from this group.
     */
-    void Remove(unsigned int idx);
+    void Remove(unsigned int row);
 
     /**
     Checks whether a row index is contained in this group.
     */
-    bool Has(unsigned int idx) const;
+    bool Has(unsigned int row) const;
 
     /**
     Returns the number of row indices that are contained in this group.
@@ -53,15 +53,20 @@ public:
     unsigned int CountAll() const;
 
     /**
-    Returns the number of rows that are in this group before the given index.
-    not including idx.
+    Returns the number of rows that are in this group before the given row index.
+    not including given row.
     */
-    unsigned int CountTo(unsigned int idx) const;
+    unsigned int CountTo(unsigned int row) const;
     unsigned int GetSize() const; // for debugging statistics
 
 private:
     ArrayOfRowRange m_ranges;
-    void CleanUp(int rngIdx);
+    /**
+    If a new row index was inserted Cleanup checks if the neighbour ranges
+    of idx can includes the same row indices and discards
+    unnecessary RowRange objects.
+    */
+    void CleanUp(int idx);
 };
 
 WX_DECLARE_HASH_MAP(unsigned int, RowRanges*, wxIntegerHash, wxIntegerEqual,
