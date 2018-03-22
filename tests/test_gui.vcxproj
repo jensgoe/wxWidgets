@@ -550,6 +550,7 @@
     <ClCompile Include="sizers\boxsizer.cpp" />
     <ClCompile Include="sizers\gridsizer.cpp" />
     <ClCompile Include="sizers\wrapsizer.cpp" />
+    <ClCompile Include="smartrowheightcache\smartrowheightcachetest.cpp" />
     <ClCompile Include="test.cpp" />
     <ClCompile Include="testableframe.cpp" />
     <ClCompile Include="toplevel\toplevel.cpp" />
