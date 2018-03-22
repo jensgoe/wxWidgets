@@ -62,7 +62,7 @@ void RowRanges::Add(const unsigned int row)
         {
             // extend range at the beginning (to the left)
             rng.from = row;
-            CleanUp(rngIdx);
+            // no cleanup necessary
             return;
         }
         if (row == rng.to)
@@ -75,7 +75,7 @@ void RowRanges::Add(const unsigned int row)
 
         if (rng.from > row + 1)
         {
-            // this range is already behind row index, so break here and insert a new range below
+            // this range is already behind row index, so break here and insert a new range before
             break;
         }
     }
@@ -116,13 +116,14 @@ void RowRanges::CleanUp(int idx)
 {
     size_t count = m_ranges.GetCount();
     size_t rngIdx = 0;
-    if (idx > 0 && idx < count)
+    if (idx > 0)
     {
         // start one RowRange before
         rngIdx = idx - 1;
     }
-    else
+    if (idx >= count)
     {
+        // should never reached, due CleanUp is private and internal called correctly
         return;
     }
     RowRange *prevRng = &m_ranges[rngIdx];
@@ -131,8 +132,11 @@ void RowRanges::CleanUp(int idx)
     {
         RowRange& rng = m_ranges[rngIdx];
 
-        if (prevRng->to >= rng.to)
+        if (prevRng->to == rng.from)
         {
+            // this range starts where the previous range began, so remove this
+            // and set the to-value of the previous range to the to-value of this range
+            prevRng->to = rng.to;
             m_ranges.RemoveAt(rngIdx);
             count--;
             continue;
@@ -265,10 +269,10 @@ bool HeightCache::GetLineAt(int y, unsigned int &row)
 
     int lo = 0;
     int hi = total;
+    int start, height;
     while (lo < hi)
     {
         int mid = (lo + hi) / 2;
-        int start, height;
         if (GetLineInfo(mid, start, height))
         {
             if (start + height <= y)
@@ -282,11 +286,25 @@ bool HeightCache::GetLineAt(int y, unsigned int &row)
         }
         else
         {
+            // should never happen, except the HeightCache has gaps which is an invalid state
             return false;
         }
     }
-    row = lo;
-    return true;
+    if (GetLineInfo(lo, start, height))
+    {
+        if (y < start)
+        {
+            // given y point is before the first row
+            return false;
+        }
+        row = lo;
+        return true;
+    }
+    else
+    {
+        // given y point is after the last row
+        return false;
+    }
 }
 
 void HeightCache::Put(const unsigned int row, const int height)
