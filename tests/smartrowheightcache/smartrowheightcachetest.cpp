@@ -82,7 +82,7 @@ void SmartRowHeightCacheTestCase::TestRowRangesSimple()
 
     CPPUNIT_ASSERT_EQUAL(rr->CountAll(), 0);
 
-    for (int i = 0; i <= 10; i++)
+    for (unsigned int i = 0; i <= 10; i++)
     {
         CPPUNIT_ASSERT_EQUAL(rr->Has(i), 0);
 
@@ -103,7 +103,7 @@ void SmartRowHeightCacheTestCase::TestRowRangesSimple()
     CPPUNIT_ASSERT_EQUAL(rr->CountAll(), 11); // 11 rows collected
     CPPUNIT_ASSERT_EQUAL(rr->CountTo(10), 10);
 
-    for (int i = 10; i >= 0; i--)
+    for (unsigned int i = 10; i >= 0; i--)
     {
         CPPUNIT_ASSERT_EQUAL(rr->CountAll(), i+1);
         CPPUNIT_ASSERT_EQUAL(rr->CountTo(i), i);
@@ -115,7 +115,7 @@ void SmartRowHeightCacheTestCase::TestRowRangesSimple()
     }
 
     CPPUNIT_ASSERT_EQUAL(rr->CountAll(), 0); // everything removed, no row range is left behind
-    for (int i = 10; i >= 0; i--)
+    for (unsigned int i = 10; i >= 0; i--)
     {
         CPPUNIT_ASSERT_EQUAL(rr->CountTo(i), 0);
     }
@@ -140,15 +140,15 @@ void SmartRowHeightCacheTestCase::TestRowRangesGapsMod2()
     CPPUNIT_ASSERT_EQUAL(rr->CountAll(), 50);
     CPPUNIT_ASSERT_EQUAL(rr->CountTo(100), 50);
 
-    for (int i = 99; i >= 0; i--)
+    for (unsigned int i = 99; i >= 0; i--)
     {
         if (i % 2 == 0)
         {
-            CPPUNIT_ASSERT_EQUAL(rr->Has(i), 1);
+            CPPUNIT_ASSERT_EQUAL(rr->Has(i), true);
         }
         else
         {
-            CPPUNIT_ASSERT_EQUAL(rr->Has(i), 0);
+            CPPUNIT_ASSERT_EQUAL(rr->Has(i), true);
             rr->Remove(i);
         }
     }
@@ -186,9 +186,9 @@ void SmartRowHeightCacheTestCase::TestRowRangesGapsMod2()
 void SmartRowHeightCacheTestCase::TestRowRangesCleanUp1()
 {
     RowRanges *rr = new RowRanges();
-    for (int i = 0; i < 100; i++)
+    for (unsigned int i = 0; i < 100; i++)
     {
-        CPPUNIT_ASSERT_EQUAL(rr->Has(i), 0);
+        CPPUNIT_ASSERT_EQUAL(rr->Has(i), false);
 
         if (i % 2 == 0)
         {
@@ -199,7 +199,7 @@ void SmartRowHeightCacheTestCase::TestRowRangesCleanUp1()
     CPPUNIT_ASSERT_EQUAL(rr->CountAll(), 50);
     CPPUNIT_ASSERT_EQUAL(rr->CountTo(100), 50);
 
-    for (int i = 0; i < 100; i++)
+    for (unsigned int i = 0; i < 100; i++)
     {
         if (i % 2 == 1)
         {
@@ -218,7 +218,7 @@ void SmartRowHeightCacheTestCase::TestRowRangesCleanUp1()
 void SmartRowHeightCacheTestCase::TestRowRangesCleanUp2()
 {
     RowRanges *rr = new RowRanges();
-    for (int i = 0; i < 10; i++)
+    for (unsigned int i = 0; i < 10; i++)
     {
         rr->Add(i);
     }
@@ -226,7 +226,7 @@ void SmartRowHeightCacheTestCase::TestRowRangesCleanUp2()
     CPPUNIT_ASSERT_EQUAL(rr->CountAll(), 10);
     CPPUNIT_ASSERT_EQUAL(rr->CountTo(100), 10);
 
-    for (int i = 12; i < 20; i++)
+    for (unsigned int i = 12; i < 20; i++)
     {
         rr->Add(i);
     }
@@ -245,15 +245,15 @@ void SmartRowHeightCacheTestCase::TestHeightCache()
 {
     HeightCache *hc = new HeightCache();
 
-    for (int i = 0; i <= 10; i++)
+    for (unsigned int i = 0; i <= 10; i++)
     {
         hc->Put(i, 22);
     }
-    for (int i = 15; i <= 17; i++)
+    for (unsigned int i = 15; i <= 17; i++)
     {
         hc->Put(i, 22);
     }
-    for (int i = 20; i <= 2000; i++)
+    for (unsigned int i = 20; i <= 2000; i++)
     {
         hc->Put(i, 22);
     }
@@ -270,10 +270,10 @@ void SmartRowHeightCacheTestCase::TestHeightCache()
     int height = 0;
     unsigned int row = 666;
 
-    CPPUNIT_ASSERT_EQUAL(hc->GetLineStart(1000, start), 1);
+    CPPUNIT_ASSERT_EQUAL(hc->GetLineStart(1000, start), true);
     CPPUNIT_ASSERT_EQUAL(start, 22180);
 
-    CPPUNIT_ASSERT_EQUAL(hc->GetLineHeight(1000, height), 1);
+    CPPUNIT_ASSERT_EQUAL(hc->GetLineHeight(1000, height), true);
     CPPUNIT_ASSERT_EQUAL(height, 22);
 
     CPPUNIT_ASSERT_EQUAL(hc->GetLineHeight(5000, start), false);

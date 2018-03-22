@@ -360,5 +360,3 @@ void HeightCache::LogSize() // for debugging statistics
     wxLogMessage("Cache size: HeightMap=%d; RowRanges=%d --> %d", heights, rowRangeCount, sizeof(RowRange) * rowRangeCount);
     m_showLogInfo = false;
 }
-
-
