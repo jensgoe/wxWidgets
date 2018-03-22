@@ -10,7 +10,6 @@
 #ifndef _WX_PRIVATE_SMARTROWHEIGHTCACHE_H_
 #define _WX_PRIVATE_SMARTROWHEIGHTCACHE_H_
 
-#include "wx/dynarray.h"
 #include "wx/hashmap.h"
 
 // struct describing a range of rows which contains rows <from> .. <to> # TODO: to-1
@@ -19,8 +18,6 @@ struct RowRange
     unsigned int from;
     unsigned int to;
 };
-
-WX_DECLARE_OBJARRAY(RowRange, ArrayOfRowRange);
 
 /**
 @class RowRanges
@@ -60,7 +57,7 @@ public:
     unsigned int GetSize() const; // for debugging statistics
 
 private:
-    ArrayOfRowRange m_ranges;
+    wxVector<RowRange> m_ranges;
     /**
     If a new row index was inserted Cleanup checks if the neighbour ranges
     of idx can includes the same row indices and discards

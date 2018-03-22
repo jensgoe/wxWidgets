@@ -36,9 +36,6 @@
 // implementation
 // ============================================================================
 
-#include "wx/arrimpl.cpp"
-WX_DEFINE_OBJARRAY(ArrayOfRowRange)
-
 
 // ----------------------------------------------------------------------------
 // RowRanges
@@ -46,11 +43,11 @@ WX_DEFINE_OBJARRAY(ArrayOfRowRange)
 
 void RowRanges::Add(const unsigned int row)
 {
-    size_t count = m_ranges.GetCount();
+    size_t count = m_ranges.size();
     size_t rngIdx = 0;
     for (rngIdx = 0; rngIdx < count; ++rngIdx)
     {
-        RowRange& rng = m_ranges[rngIdx];
+        RowRange &rng = m_ranges[rngIdx];
 
         if (row >= rng.from && rng.to > row)
         {
@@ -84,20 +81,20 @@ void RowRanges::Add(const unsigned int row)
     RowRange newRange;
     newRange.from = row;
     newRange.to = row + 1;
-    m_ranges.Insert(newRange, rngIdx);
+    m_ranges.insert(m_ranges.begin() + rngIdx, newRange);
 }
 
 void RowRanges::Remove(const unsigned int row)
 {
-    size_t count = m_ranges.GetCount();
+    size_t count = m_ranges.size();
     size_t rngIdx = 0;
     while (rngIdx < count)
     {
-        RowRange& rng = m_ranges[rngIdx];
+        RowRange &rng = m_ranges[rngIdx];
         if (rng.from >= row)
         {
             // this range starts behind row index, so remove it
-            m_ranges.RemoveAt(rngIdx);
+            m_ranges.erase(m_ranges.begin() + rngIdx);
             count--;
             continue;
         }
@@ -114,7 +111,7 @@ void RowRanges::Remove(const unsigned int row)
 
 void RowRanges::CleanUp(int idx)
 {
-    size_t count = m_ranges.GetCount();
+    size_t count = m_ranges.size();
     size_t rngIdx = 0;
     if (idx > 0)
     {
@@ -130,14 +127,14 @@ void RowRanges::CleanUp(int idx)
     rngIdx++;
     while (rngIdx <= idx + 1 && rngIdx < count)
     {
-        RowRange& rng = m_ranges[rngIdx];
+        RowRange &rng = m_ranges[rngIdx];
 
         if (prevRng->to == rng.from)
         {
             // this range starts where the previous range began, so remove this
             // and set the to-value of the previous range to the to-value of this range
             prevRng->to = rng.to;
-            m_ranges.RemoveAt(rngIdx);
+            m_ranges.erase(m_ranges.begin() + rngIdx);
             count--;
             continue;
         }
@@ -149,10 +146,10 @@ void RowRanges::CleanUp(int idx)
 
 bool RowRanges::Has(unsigned int row) const
 {
-    size_t count = m_ranges.GetCount();
+    size_t count = m_ranges.size();
     for (size_t rngIdx = 0; rngIdx < count; rngIdx++)
     {
-        const RowRange& rng = m_ranges[rngIdx];
+        const RowRange &rng = m_ranges[rngIdx];
         if (rng.from <= row && row < rng.to)
         {
             return true;
@@ -164,10 +161,10 @@ bool RowRanges::Has(unsigned int row) const
 unsigned int RowRanges::CountAll() const
 {
     unsigned int ctr = 0;
-    size_t count = m_ranges.GetCount();
+    size_t count = m_ranges.size();
     for (size_t rngIdx = 0; rngIdx < count; rngIdx++)
     {
-        const RowRange& rng = m_ranges[rngIdx];
+        const RowRange &rng = m_ranges[rngIdx];
         ctr += rng.to - rng.from;
     }
     return ctr;
@@ -176,10 +173,10 @@ unsigned int RowRanges::CountAll() const
 unsigned int RowRanges::CountTo(unsigned int row) const
 {
     unsigned int ctr = 0;
-    size_t count = m_ranges.GetCount();
+    size_t count = m_ranges.size();
     for (size_t rngIdx = 0; rngIdx < count; rngIdx++)
     {
-        const RowRange& rng = m_ranges[rngIdx];
+        const RowRange &rng = m_ranges[rngIdx];
         if (rng.from > row)
         {
             break;

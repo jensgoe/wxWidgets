@@ -84,13 +84,13 @@ void SmartRowHeightCacheTestCase::TestRowRangesSimple()
 
     for (unsigned int i = 0; i <= 10; i++)
     {
-        CPPUNIT_ASSERT_EQUAL(rr->Has(i), 0);
+        CPPUNIT_ASSERT_EQUAL(rr->Has(i), false);
 
         rr->Add(i);
 
         CPPUNIT_ASSERT_EQUAL(rr->CountAll(), i+1);
         CPPUNIT_ASSERT_EQUAL(rr->CountTo(i), i);
-        CPPUNIT_ASSERT_EQUAL(rr->Has(i), 1);
+        CPPUNIT_ASSERT_EQUAL(rr->Has(i), true);
     }
 
     CPPUNIT_ASSERT_EQUAL(rr->GetSize(), 1); // every row is sorted in the same range, so count == 1
@@ -103,19 +103,19 @@ void SmartRowHeightCacheTestCase::TestRowRangesSimple()
     CPPUNIT_ASSERT_EQUAL(rr->CountAll(), 11); // 11 rows collected
     CPPUNIT_ASSERT_EQUAL(rr->CountTo(10), 10);
 
-    for (unsigned int i = 10; i >= 0; i--)
+    for (int i = 10; i >= 0; i--)
     {
-        CPPUNIT_ASSERT_EQUAL(rr->CountAll(), i+1);
-        CPPUNIT_ASSERT_EQUAL(rr->CountTo(i), i);
+        CPPUNIT_ASSERT_EQUAL(rr->CountAll(), (unsigned)i+1);
+        CPPUNIT_ASSERT_EQUAL(rr->CountTo((unsigned)i), (unsigned)i);
 
         rr->Remove(i);
 
-        CPPUNIT_ASSERT_EQUAL(rr->CountAll(), i);
-        CPPUNIT_ASSERT_EQUAL(rr->CountTo(i), i);
+        CPPUNIT_ASSERT_EQUAL(rr->CountAll(), (unsigned)i);
+        CPPUNIT_ASSERT_EQUAL(rr->CountTo((unsigned)i), (unsigned)i);
     }
 
     CPPUNIT_ASSERT_EQUAL(rr->CountAll(), 0); // everything removed, no row range is left behind
-    for (unsigned int i = 10; i >= 0; i--)
+    for (int i = 10; i > 0; i--)
     {
         CPPUNIT_ASSERT_EQUAL(rr->CountTo(i), 0);
     }
@@ -130,7 +130,7 @@ void SmartRowHeightCacheTestCase::TestRowRangesGapsMod2()
     RowRanges *rr = new RowRanges();
     for (int i = 0; i < 100; i++)
     {
-        CPPUNIT_ASSERT_EQUAL(rr->Has(i), 0);
+        CPPUNIT_ASSERT_EQUAL(rr->Has(i), false);
 
         if (i % 2 == 0)
         {
@@ -140,16 +140,17 @@ void SmartRowHeightCacheTestCase::TestRowRangesGapsMod2()
     CPPUNIT_ASSERT_EQUAL(rr->CountAll(), 50);
     CPPUNIT_ASSERT_EQUAL(rr->CountTo(100), 50);
 
-    for (unsigned int i = 99; i >= 0; i--)
+    for (unsigned int i = 99; i > 0; i--)
     {
         if (i % 2 == 0)
         {
             CPPUNIT_ASSERT_EQUAL(rr->Has(i), true);
+            rr->Remove(i);
+            CPPUNIT_ASSERT_EQUAL(rr->Has(i), false);
         }
         else
         {
-            CPPUNIT_ASSERT_EQUAL(rr->Has(i), true);
-            rr->Remove(i);
+            CPPUNIT_ASSERT_EQUAL(rr->Has(i), false);
         }
     }
 
