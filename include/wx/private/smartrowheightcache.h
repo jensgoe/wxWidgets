@@ -11,8 +11,9 @@
 #define _WX_PRIVATE_SMARTROWHEIGHTCACHE_H_
 
 #include "wx/hashmap.h"
+#include "wx/vector.h"
 
-// struct describing a range of rows which contains rows <from> .. <to> # TODO: to-1
+// struct describing a range of rows which contains rows <from> .. <to-1>
 struct RowRange
 {
     unsigned int from;
