@@ -109,7 +109,7 @@ void RowRanges::Remove(const unsigned int row)
 }
 
 
-void RowRanges::CleanUp(int idx)
+void RowRanges::CleanUp(unsigned int idx)
 {
     size_t count = m_ranges.size();
     size_t rngIdx = 0;

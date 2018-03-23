@@ -64,7 +64,7 @@ private:
     of idx can includes the same row indices and discards
     unnecessary RowRange objects.
     */
-    void CleanUp(int idx);
+    void CleanUp(unsigned int idx);
 };
 
 WX_DECLARE_HASH_MAP(unsigned int, RowRanges*, wxIntegerHash, wxIntegerEqual,
@@ -125,6 +125,10 @@ public:
     bool GetLineAt(int y, unsigned int &row);
 
     void Put(const unsigned int row, const int height);
+    /**
+    removes the stored height of the given row from the cache
+    and invalidates all cached rows (including row)
+    */
     void Remove(const unsigned int row);
     void Clear();
     void LogSize(); // for debugging statistics
