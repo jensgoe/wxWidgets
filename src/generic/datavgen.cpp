@@ -3369,9 +3369,6 @@ int wxDataViewMainWindow::GetLineStart( unsigned int row ) const
         unsigned int r;
         for (r = 0; r < row; r++)
         {
-            const wxDataViewTreeNode* node = GetTreeNodeByRow(r);
-            if (!node) return start;
-
             int height = 0;
             if (m_rowHeightCache->GetLineHeight(r, height))
             {
@@ -3379,7 +3376,17 @@ int wxDataViewMainWindow::GetLineStart( unsigned int row ) const
                 continue;
             }
 
-            wxDataViewItem item = node->GetItem();
+            wxDataViewItem item;
+            if (IsList())
+            {
+                item = GetItemByRow(r);
+            }
+            else
+            {
+                const wxDataViewTreeNode* node = GetTreeNodeByRow(r);
+                if (!node) return start;
+                item = node->GetItem();
+            }
 
             unsigned int cols = GetOwner()->GetColumnCount();
             unsigned int col;
@@ -3431,18 +3438,26 @@ int wxDataViewMainWindow::GetLineAt( unsigned int y ) const
 
     for (;;)
     {
-        const wxDataViewTreeNode* node = GetTreeNodeByRow(row);
-        if (!node)
-        {
-            // not really correct...
-            return row + ((y-yy) / m_lineHeight);
-        }
-
         int height = 0;
         if (!m_rowHeightCache->GetLineHeight(row, height))
         {
             // row height not in cache -> get it from the renderer...
-            wxDataViewItem item = node->GetItem();
+
+            wxDataViewItem item;
+            if (IsList())
+            {
+                item = GetItemByRow(row);
+            }
+            else
+            {
+                const wxDataViewTreeNode* node = GetTreeNodeByRow(row);
+                if (!node)
+                {
+                    // not really correct...
+                    return row + ((y - yy) / m_lineHeight);
+                }
+                item = node->GetItem();
+            }
 
             unsigned int cols = GetOwner()->GetColumnCount();
             unsigned int col;
@@ -3485,15 +3500,22 @@ int wxDataViewMainWindow::GetLineHeight( unsigned int row ) const
     {
         wxASSERT( !IsVirtualList() );
 
-        const wxDataViewTreeNode* node = GetTreeNodeByRow(row);
-        // wxASSERT( node );
-        if (!node) return m_lineHeight;
-
         int height = 0;
         if (m_rowHeightCache->GetLineHeight(row, height))
             return height;
 
-        wxDataViewItem item = node->GetItem();
+        wxDataViewItem item;
+        if (IsList())
+        {
+            item = GetItemByRow(row);
+        }
+        else
+        {
+            const wxDataViewTreeNode* node = GetTreeNodeByRow(row);
+            // wxASSERT( node );
+            if (!node) return m_lineHeight;
+            item = node->GetItem();
+        }
 
         height = m_lineHeight;
         unsigned int cols = GetOwner()->GetColumnCount();
