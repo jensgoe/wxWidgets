@@ -3502,8 +3502,6 @@ int wxDataViewMainWindow::GetLineHeight( unsigned int row ) const
 
     if (GetOwner()->GetWindowStyle() & wxDV_VARIABLE_LINE_HEIGHT)
     {
-        wxASSERT( !IsVirtualList() );
-
         int height = 0;
         if (m_rowHeightCache->GetLineHeight(row, height))
             return height;
