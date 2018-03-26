@@ -52,7 +52,6 @@
 #include "wx/selstore.h"
 #include "wx/stopwatch.h"
 #include "wx/weakref.h"
-#include "wx/vector.h"
 #include "wx/generic/private/markuptext.h"
 #include "wx/generic/private/widthcalc.h"
 #include "wx/private/smartrowheightcache.h"
@@ -686,7 +685,6 @@ private:
 //-----------------------------------------------------------------------------
 // wxDataViewMainWindow
 //-----------------------------------------------------------------------------
-
 
 class wxDataViewMainWindow: public wxWindow
 {

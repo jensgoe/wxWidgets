@@ -131,12 +131,10 @@ public:
     */
     void Remove(const unsigned int row);
     void Clear();
-    void LogSize(); // for debugging statistics
 
 private:
     bool GetLineInfo(unsigned int row, int &start, int &height);
     HeightToRowRangesMap  m_heightToRowRange;
-    bool m_showLogInfo; // true if changed since last logging
 };
 
 

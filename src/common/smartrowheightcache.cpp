@@ -313,7 +313,6 @@ void HeightCache::Put(const unsigned int row, const int height)
         m_heightToRowRange[height] = rowRanges;
     }
     rowRanges->Add(row);
-    m_showLogInfo = true;
 }
 
 void HeightCache::Remove(const unsigned int row)
@@ -335,25 +334,4 @@ void HeightCache::Clear()
         delete rowRanges;
     }
     m_heightToRowRange.clear();
-    m_showLogInfo = true;
-}
-
-void HeightCache::LogSize() // for debugging statistics
-{
-    if (!m_showLogInfo)
-    {
-        return;
-    }
-
-    int rowRangeCount = 0;
-    HeightToRowRangesMap::iterator it;
-    for (it = m_heightToRowRange.begin(); it != m_heightToRowRange.end(); ++it)
-    {
-        RowRanges* rowRanges = it->second;
-        rowRangeCount += rowRanges->GetSize();
-    }
-    int heights = m_heightToRowRange.size();
-
-    wxLogMessage("Cache size: HeightMap=%d; RowRanges=%d --> %d", heights, rowRangeCount, sizeof(RowRange) * rowRangeCount);
-    m_showLogInfo = false;
 }
